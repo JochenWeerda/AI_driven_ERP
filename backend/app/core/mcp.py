@@ -1,7 +1,7 @@
 from typing import Optional
 import grpc
 from mcp_python_sdk import MCPClient, MCPRequest, MCPResponse
-from app.core.config import settings
+from backend.app.core.config import settings
 
 class MCPManager:
     _instance: Optional['MCPManager'] = None

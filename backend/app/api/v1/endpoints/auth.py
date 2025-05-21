@@ -1,16 +1,42 @@
 from datetime import timedelta
 from typing import Any
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from app.core import security
-from app.core.config import settings
-from app.core.security import get_password_hash, verify_password
-from app.db.session import get_db
-from app.models.erp import User
-from app.schemas.auth import Token, UserCreate, UserResponse
+from backend.app.core import security
+from backend.app.core.config import settings
+from backend.app.core.security import get_password_hash, verify_password, decode_token
+from backend.app.db.session import get_db
+from backend.app.models.erp import User
+from backend.app.schemas.auth import Token, UserCreate, UserResponse
 
 router = APIRouter()
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+async def get_current_user(
+    db: Session = Depends(get_db),
+    token: str = Depends(oauth2_scheme)
+) -> User:
+    """Holt den aktuellen Benutzer aus dem Token"""
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Ungültige Anmeldedaten",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    
+    payload = decode_token(token)
+    if payload is None:
+        raise credentials_exception
+    
+    user_id: int = int(payload.get("sub"))
+    if user_id is None:
+        raise credentials_exception
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise credentials_exception
+    
+    return user
 
 @router.post("/login", response_model=Token)
 async def login(
@@ -39,6 +65,13 @@ async def login(
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+@router.get("/me", response_model=UserResponse)
+async def read_users_me(
+    current_user: User = Depends(get_current_user)
+) -> Any:
+    """Gibt die Informationen des aktuellen Benutzers zurück"""
+    return current_user
 
 @router.post("/register", response_model=UserResponse)
 def register(
