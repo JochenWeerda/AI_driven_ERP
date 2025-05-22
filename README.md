@@ -1,105 +1,83 @@
-# AI-Driven ERP
+# AI-gesteuertes ERP-System
 
-Ein modernes, Open-Source Warenwirtschaftssystem mit KI-Integration.
+Ein innovatives ERP-System, das traditionelle Enterprise Resource Planning-Funktionalitäten mit fortschrittlichen KI-Funktionen verbindet.
 
-## 🚀 Features
+## Projektübersicht
 
-- Moderne Web-Oberfläche (React)
-- RESTful API (FastAPI)
-- KI-Integration via Model Context Protocol (MCP)
-- PostgreSQL Datenbank
-- OAuth 2.0 Authentifizierung
-- Responsive Design
+Dieses Projekt zielt darauf ab, ein modulares ERP-System zu entwickeln, das KI-Funktionen integriert, um Geschäftsprozesse zu optimieren, die Entscheidungsfindung zu unterstützen und den manuellen Aufwand zu reduzieren.
 
-## 🛠️ Technologie-Stack
+## Memory Bank System
 
-### Backend
-- FastAPI (Python)
-- PostgreSQL
-- MongoDB (für KI-Module)
-- gRPC für interne Kommunikation
+Dieses Projekt verwendet das Memory Bank System für eine strukturierte Entwicklung. Das System besteht aus verschiedenen benutzerdefinierten Modi, die verschiedene Phasen des Entwicklungsprozesses repräsentieren.
 
-### Frontend
-- React
-- Tailwind CSS
-- Material UI
+### Modi und ihre Funktionen
 
-### KI & Integration
-- Model Context Protocol (MCP)
-- LLM-Integration
-- ML-Module für Prognosen und Automatisierung
+1. **🔍 VAN (Initialisierung)**
+   - Projektanalyse
+   - Komplexitätsbestimmung
+   - Grundlegende Setup-Aufgaben
 
-## 📋 Voraussetzungen
+2. **📋 PLAN (Aufgabenplanung)**
+   - Detaillierte Planung
+   - Aufgabenaufschlüsselung
+   - Priorisierung
 
-- Python 3.9+
-- Node.js 18+
-- PostgreSQL 14+
-- Docker (optional)
+3. **🎨 CREATIVE (Design-Entscheidungen)**
+   - Architekturentwurf
+   - Design-Optionen erkunden
+   - Technologieauswahl
 
-## 🚀 Installation
+4. **⚒️ IMPLEMENT (Code-Implementierung)**
+   - Codeentwicklung
+   - Testing
+   - Integration
 
-1. Repository klonen:
-```bash
-git clone https://github.com/JochenWeerda/AI_driven_ERP.git
-cd AI_driven_ERP
-```
+5. **🔍 REFLECT (Überprüfung)**
+   - Code-Review
+   - Leistungsoptimierung
+   - Qualitätssicherung
 
-2. Backend einrichten:
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate  # Unter Windows: .\venv\Scripts\activate
-pip install -r requirements.txt
-```
+6. **📚 ARCHIVE (Dokumentation)**
+   - Umfassende Dokumentation
+   - Wartungshinweise
+   - Benutzerhandbücher
 
-3. Frontend einrichten:
-```bash
-cd frontend
-npm install
-```
+### Verwendung des Memory Bank Systems
 
-4. Umgebungsvariablen konfigurieren:
-```bash
-cp .env.example .env
-# Bearbeiten Sie .env mit Ihren Konfigurationen
-```
+1. **Start mit VAN-Modus**:
+   - Wechsle zum VAN-Modus in Cursor
+   - Gib "VAN" ein, um den Initialisierungsprozess zu starten
+   - Der VAN-Modus analysiert die Projektstruktur und bestimmt die Komplexität
 
-5. Datenbank initialisieren:
-```bash
-cd backend
-alembic upgrade head
-```
+2. **Workflow basierend auf der Komplexität**:
+   - **Level 1**: VAN → IMPLEMENT
+   - **Level 2**: VAN → PLAN → IMPLEMENT → REFLECT
+   - **Level 3-4**: VAN → PLAN → CREATIVE → IMPLEMENT → REFLECT → ARCHIVE
 
-## 🏃‍♂️ Entwicklungsserver starten
+3. **Modus-spezifische Befehle**:
+   - VAN - Projekt initialisieren und Komplexität bestimmen
+   - PLAN - Detaillierten Implementierungsplan erstellen
+   - CREATIVE - Design-Optionen für komplexe Komponenten erkunden
+   - IMPLEMENT - Systematisch geplante Komponenten entwickeln
+   - REFLECT - Überprüfen und Erkenntnisse dokumentieren
+   - ARCHIVE - Umfassende Dokumentation erstellen
+   - QA - Technische Implementierung validieren (kann von jedem Modus aus aufgerufen werden)
 
-### Backend
-```bash
-cd backend
-uvicorn main:app --reload
-```
+## Projektstruktur
 
-### Frontend
-```bash
-cd frontend
-npm run dev
-```
+- `memory-bank/` - Enthält alle Memory Bank Dateien zur Dokumentation des Projekts
+- `.cursor/rules/isolation_rules/` - Regeln für das Memory Bank System
+- `custom_modes/` - Anweisungen für die benutzerdefinierten Modi
 
-## 📚 Dokumentation
+## Erste Schritte
 
-- API-Dokumentation: http://localhost:8000/docs
-- Frontend-Dokumentation: [docs/frontend.md](docs/frontend.md)
-- MCP-Integration: [docs/mcp.md](docs/mcp.md)
+Um mit dem Projekt zu beginnen:
 
-## 🤝 Mitwirken
+1. Öffne Cursor und stelle sicher, dass alle benutzerdefinierten Modi konfiguriert sind
+2. Wechsle zum VAN-Modus
+3. Gib "VAN" ein, um das Projekt zu initialisieren
+4. Folge den Anweisungen des Systems für die weiteren Schritte
 
-Beiträge sind willkommen! Bitte lesen Sie unsere [Contributing Guidelines](CONTRIBUTING.md).
+## Lizenz
 
-## 📄 Lizenz
-
-Dieses Projekt steht unter der MIT-Lizenz - siehe [LICENSE](LICENSE) für Details.
-
-## 📞 Kontakt
-
-- GitHub Issues für Bug-Reports und Feature-Requests
-- Pull Requests für Code-Beiträge
-- Diskussionsforum (in Planung)
+[MIT](https://choosealicense.com/licenses/mit/)

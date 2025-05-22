@@ -7,9 +7,9 @@ from sqlalchemy import or_, and_
 from datetime import datetime
 import json
 
-from app.db.database import get_db
-from app.models.odata_models import Pickliste, Tour, Auftrag, Auftragsposition
-from app.schemas.odata_schemas import (
+from backend.app.db.database import get_db
+from backend.app.models.odata_models import Pickliste, Tour, Auftrag, Auftragsposition
+from backend.app.schemas.odata_schemas import (
     TourCreate, TourResponse,
     PicklisteCreate, PicklisteResponse,
     AuftragCreate, AuftragResponse,

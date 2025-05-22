@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     ]
     
     # Database
-    DATABASE_URL: str = "sqlite:///./erp.db"
+    DATABASE_URL: str = "sqlite:///app.db"
     
     # Security
     SECRET_KEY: str = "your-secret-key-here"  # In Produktion durch sicheren Schlüssel ersetzen

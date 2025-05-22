@@ -6,6 +6,7 @@ import { RootState } from '../store';
 import Sidebar from './Sidebar';
 import Header from './Header';
 import Notification from './Notification';
+import SystemStatus from './SystemStatus';
 
 const Layout: React.FC = () => {
   const theme = useTheme();
@@ -30,6 +31,7 @@ const Layout: React.FC = () => {
         }}
       >
         <Box sx={{ mt: 8 }}>
+          <SystemStatus />
           <Outlet />
         </Box>
       </Box>

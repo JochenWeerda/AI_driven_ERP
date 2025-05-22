@@ -1,7 +1,8 @@
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
-from backend.app.core.config import settings
+from app.core.config import settings
+from app.db.base import Base
 
 # SQLite-Datenbank (erp.db) verwenden
 engine = create_engine(
@@ -10,8 +11,6 @@ engine = create_engine(
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-Base = declarative_base()
 
 # Dependency
 def get_db():

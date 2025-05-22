@@ -106,10 +106,17 @@ class TourStatus(str, Enum):
     ABGESCHLOSSEN = "abgeschlossen"
     STORNIERT = "storniert"
 
+class TourMode(str, Enum):
+    STANDARD = "standard"
+    EXPRESS = "express"
+    NACHTSCHICHT = "nachtschicht"
+    SONDERFAHRT = "sonderfahrt"
+
 class TourBase(BaseModel):
     tournr: int = Field(gt=0, description="Tournummer muss größer als 0 sein")
     datum: datetime
     status: TourStatus = Field(default=TourStatus.PLANUNG)
+    mode: TourMode = Field(default=TourMode.STANDARD, description="Betriebsmodus der Tour")
 
     @validator('tournr')
     def validate_tournr(cls, v):
@@ -124,6 +131,15 @@ class TourBase(BaseModel):
                 return TourStatus(v)
             except ValueError:
                 raise ValueError(f'Ungültiger Status. Erlaubte Werte: {", ".join([s.value for s in TourStatus])}')
+        return v
+
+    @validator('mode')
+    def validate_mode(cls, v):
+        if not isinstance(v, TourMode):
+            try:
+                return TourMode(v)
+            except ValueError:
+                raise ValueError(f'Ungültiger Modus. Erlaubte Werte: {", ".join([m.value for m in TourMode])}')
         return v
 
     @validator('datum')
