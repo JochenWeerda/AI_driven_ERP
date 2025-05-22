@@ -1,10 +1,20 @@
+# Virtuelle Umgebungen
+.venv/
+venv/
+env/
+backend/venv/
+
+# Große Installer-Dateien
+*.exe
+*.msi
+*.bin
+
 # Python
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-env/
 build/
 develop-eggs/
 dist/
@@ -16,15 +26,27 @@ lib64/
 parts/
 sdist/
 var/
+wheels/
 *.egg-info/
 .installed.cfg
 *.egg
 
-# Virtuelle Umgebungen
-venv/
-.venv/
-ENV/
-env/
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Logs
+logs/
+*.log
+
+# Umgebungsvariablen
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # Datenbanken
 *.db
@@ -32,16 +54,7 @@ env/
 *.sqlite
 
 # IDE-spezifische Dateien
-.idea/
-.vscode/
-*.swp
-*.swo
 .DS_Store
-
-# Logs
-*.log
-logs/
-log/
 
 # Temporäre Dateien
 *.tmp
@@ -50,9 +63,6 @@ log/
 *~
 .coverage
 htmlcov/
-
-# Umgebungsvariablen
-.env
 
 # Abhängig von der Projektstruktur
 node_modules/
@@ -67,11 +77,6 @@ yarn-error.log
 .pnp/
 .pnp.js
 coverage/
-build/
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
 
 # Project specific
 config.local.ini 
