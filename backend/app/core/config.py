@@ -1,5 +1,6 @@
 from typing import List
-from pydantic import BaseSettings
+from pydantic import BaseModel, field_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "AI-Driven ERP"
@@ -21,7 +22,6 @@ class Settings(BaseSettings):
     SECRET_KEY: str = "your-secret-key-here"  # In Produktion durch sicheren Schlüssel ersetzen
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8  # 8 Tage
     
-    class Config:
-        case_sensitive = True
+    model_config = SettingsConfigDict(case_sensitive=True)
 
 settings = Settings() 

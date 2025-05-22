@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field, validator, constr
-from typing import Optional, List, ForwardRef
+from pydantic import BaseModel, Field, field_validator, ConfigDict
+from typing import Optional, List, ForwardRef, Annotated
 from datetime import datetime
 from enum import Enum
 
@@ -10,10 +10,10 @@ class PicklisteStatus(str, Enum):
     STORNIERT = "storniert"
 
 class AuftragspositionBase(BaseModel):
-    artikelnr: constr(min_length=1, max_length=50)
-    menge: int = Field(gt=0, description="Menge muss größer als 0 sein")
+    artikelnr: Annotated[str, Field(min_length=1, max_length=50)]
+    menge: Annotated[int, Field(gt=0, description="Menge muss größer als 0 sein")]
 
-    @validator('artikelnr')
+    @field_validator('artikelnr')
     def validate_artikelnr(cls, v):
         if not v.strip():
             raise ValueError('Artikelnummer darf nicht leer sein')
@@ -28,10 +28,7 @@ class AuftragspositionResponse(AuftragspositionBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-        populate_by_name = True
-        arbitrary_types_allowed = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AuftragArt(str, Enum):
     LIEFERUNG = "lieferung"
@@ -45,18 +42,18 @@ class AuftragStatus(str, Enum):
     STORNIERT = "storniert"
 
 class AuftragBase(BaseModel):
-    belegnr: int = Field(gt=0, description="Belegnummer muss größer als 0 sein")
+    belegnr: Annotated[int, Field(gt=0, description="Belegnummer muss größer als 0 sein")]
     datum: datetime
     art: AuftragArt
     status: AuftragStatus = Field(default=AuftragStatus.NEU)
 
-    @validator('belegnr')
+    @field_validator('belegnr')
     def validate_belegnr(cls, v):
         if v <= 0:
             raise ValueError('Belegnummer muss größer als 0 sein')
         return v
 
-    @validator('art')
+    @field_validator('art')
     def validate_art(cls, v):
         if not isinstance(v, AuftragArt):
             try:
@@ -65,7 +62,7 @@ class AuftragBase(BaseModel):
                 raise ValueError(f'Ungültige Auftragsart. Erlaubte Werte: {", ".join([a.value for a in AuftragArt])}')
         return v
 
-    @validator('status')
+    @field_validator('status')
     def validate_status(cls, v):
         if not isinstance(v, AuftragStatus):
             try:
@@ -74,7 +71,7 @@ class AuftragBase(BaseModel):
                 raise ValueError(f'Ungültiger Status. Erlaubte Werte: {", ".join([s.value for s in AuftragStatus])}')
         return v
 
-    @validator('datum')
+    @field_validator('datum')
     def validate_datum(cls, v):
         if v > datetime.utcnow():
             raise ValueError('Auftragsdatum darf nicht in der Zukunft liegen')
@@ -84,7 +81,7 @@ class AuftragCreate(AuftragBase):
     pickliste_id: int
     auftragspositionen: List[AuftragspositionCreate] = Field(default_factory=list)
 
-    @validator('auftragspositionen')
+    @field_validator('auftragspositionen')
     def validate_auftragspositionen(cls, v):
         if not v:
             raise ValueError('Auftrag muss mindestens eine Position enthalten')
@@ -97,8 +94,7 @@ class AuftragResponse(AuftragBase):
     updated_at: datetime
     positionen: List[AuftragspositionResponse] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TourStatus(str, Enum):
     PLANUNG = "planung"
@@ -113,18 +109,18 @@ class TourMode(str, Enum):
     SONDERFAHRT = "sonderfahrt"
 
 class TourBase(BaseModel):
-    tournr: int = Field(gt=0, description="Tournummer muss größer als 0 sein")
+    tournr: Annotated[int, Field(gt=0, description="Tournummer muss größer als 0 sein")]
     datum: datetime
     status: TourStatus = Field(default=TourStatus.PLANUNG)
     mode: TourMode = Field(default=TourMode.STANDARD, description="Betriebsmodus der Tour")
 
-    @validator('tournr')
+    @field_validator('tournr')
     def validate_tournr(cls, v):
         if v <= 0:
             raise ValueError('Tournummer muss größer als 0 sein')
         return v
 
-    @validator('status')
+    @field_validator('status')
     def validate_status(cls, v):
         if not isinstance(v, TourStatus):
             try:
@@ -133,7 +129,7 @@ class TourBase(BaseModel):
                 raise ValueError(f'Ungültiger Status. Erlaubte Werte: {", ".join([s.value for s in TourStatus])}')
         return v
 
-    @validator('mode')
+    @field_validator('mode')
     def validate_mode(cls, v):
         if not isinstance(v, TourMode):
             try:
@@ -142,7 +138,7 @@ class TourBase(BaseModel):
                 raise ValueError(f'Ungültiger Modus. Erlaubte Werte: {", ".join([m.value for m in TourMode])}')
         return v
 
-    @validator('datum')
+    @field_validator('datum')
     def validate_datum(cls, v):
         if v > datetime.utcnow():
             raise ValueError('Tourdatum darf nicht in der Zukunft liegen')
@@ -157,21 +153,20 @@ class TourResponse(TourBase):
     updated_at: datetime
     picklisten: List['PicklisteResponse'] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class PicklisteBase(BaseModel):
-    picklistnr: int = Field(gt=0, description="Picklistennummer muss größer als 0 sein")
+    picklistnr: Annotated[int, Field(gt=0, description="Picklistennummer muss größer als 0 sein")]
     status: PicklisteStatus = Field(default=PicklisteStatus.NEU)
-    tour_id: Optional[int] = Field(None, gt=0, description="Tour-ID muss größer als 0 sein")
+    tour_id: Optional[Annotated[int, Field(gt=0, description="Tour-ID muss größer als 0 sein")]] = None
 
-    @validator('picklistnr')
+    @field_validator('picklistnr')
     def validate_picklistnr(cls, v):
         if v <= 0:
             raise ValueError('Picklistennummer muss größer als 0 sein')
         return v
 
-    @validator('status')
+    @field_validator('status')
     def validate_status(cls, v):
         if not isinstance(v, PicklisteStatus):
             try:
@@ -189,9 +184,8 @@ class PicklisteResponse(PicklisteBase):
     updated_at: datetime
     auftraege: List[AuftragResponse] = Field(default_factory=list)
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Aktualisiere die ForwardRefs
-TourResponse.update_forward_refs()
-PicklisteResponse.update_forward_refs() 
+TourResponse.model_rebuild()
+PicklisteResponse.model_rebuild() 

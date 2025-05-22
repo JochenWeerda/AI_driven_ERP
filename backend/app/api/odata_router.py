@@ -7,14 +7,34 @@ from sqlalchemy import or_, and_
 from datetime import datetime
 import json
 
-from backend.app.db.database import get_db
-from backend.app.models.odata_models import Pickliste, Tour, Auftrag, Auftragsposition
-from backend.app.schemas.odata_schemas import (
-    TourCreate, TourResponse,
-    PicklisteCreate, PicklisteResponse,
-    AuftragCreate, AuftragResponse,
-    AuftragspositionCreate, AuftragspositionResponse
-)
+# Verwende den Import-Handler, falls verfügbar
+try:
+    from backend.core.import_handler import import_from
+    get_db = import_from('db.database', 'get_db')
+    Pickliste = import_from('models.odata_models', 'Pickliste')
+    Tour = import_from('models.odata_models', 'Tour')
+    Auftrag = import_from('models.odata_models', 'Auftrag')
+    Auftragsposition = import_from('models.odata_models', 'Auftragsposition')
+    
+    # Import der Schemas
+    TourCreate = import_from('schemas.odata_schemas', 'TourCreate')
+    TourResponse = import_from('schemas.odata_schemas', 'TourResponse')
+    PicklisteCreate = import_from('schemas.odata_schemas', 'PicklisteCreate')
+    PicklisteResponse = import_from('schemas.odata_schemas', 'PicklisteResponse')
+    AuftragCreate = import_from('schemas.odata_schemas', 'AuftragCreate')
+    AuftragResponse = import_from('schemas.odata_schemas', 'AuftragResponse')
+    AuftragspositionCreate = import_from('schemas.odata_schemas', 'AuftragspositionCreate')
+    AuftragspositionResponse = import_from('schemas.odata_schemas', 'AuftragspositionResponse')
+except ImportError:
+    # Fallback zu direkten Imports
+    from app.db.database import get_db
+    from app.models.odata_models import Pickliste, Tour, Auftrag, Auftragsposition
+    from app.schemas.odata_schemas import (
+        TourCreate, TourResponse,
+        PicklisteCreate, PicklisteResponse,
+        AuftragCreate, AuftragResponse,
+        AuftragspositionCreate, AuftragspositionResponse
+    )
 
 router = APIRouter(prefix="/odata")
 

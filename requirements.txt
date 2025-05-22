@@ -4,7 +4,8 @@
 fastapi>=0.109.0
 uvicorn>=0.21.0
 pydantic>=2.0.0  # Kompatibel mit Python 3.13
-sqlalchemy>=2.0.0
+pydantic-settings>=2.0.0  # Für Pydantic v2 Settings
+sqlalchemy>=2.0.24  # Behebt Kompatibilitätsprobleme mit Python 3.13
 python-dotenv>=1.0.0
 pytest>=7.3.1
 

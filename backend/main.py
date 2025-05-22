@@ -77,9 +77,15 @@ Base = import_from('db.base', 'Base')
 if not Base:
     Base = import_from('app.db.base', 'Base')
 
+# Versuche verschiedene Pfade für den API-Router
 api_router = import_from('api.v1.api', 'api_router')
 if not api_router:
     api_router = import_from('app.api.v1.api', 'api_router')
+    if not api_router:
+        # Erstelle einen Fallback-Router, wenn keiner gefunden wurde
+        from fastapi import APIRouter
+        api_router = APIRouter()
+        print("WARNUNG: Kein API-Router gefunden, verwende leeren Fallback-Router")
 
 # Import der Modelle
 Tour = import_from('models.odata_models', 'Tour')
