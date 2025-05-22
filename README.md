@@ -1,85 +1,53 @@
-# AI-Driven ERP-System
+# AI-driven ERP System
 
-Ein modernes, KI-gesteuertes Enterprise Resource Planning System, das die Funktionalitäten klassischer ERP-Systeme (wie ServiceERP L3) bietet und durch KI-Funktionen erweitert.
+Ein modernes ERP-System mit KI-Funktionen für die automatisierte Geschäftsprozessverwaltung und intelligente Datenanalyse.
 
 ## Funktionen
 
-- **Adressverwaltung**: Kunden-, Lieferanten- und Partneradressen
-- **Artikelverwaltung**: Artikelstammdaten, Lagerbestände, Preise
-- **Auftragsverwaltung**: Auftragserfassung, -bearbeitung und -verfolgung
-- **Bestellwesen**: Lieferantenbestellungen und Bestellverfolgung
-- **Lagerverwaltung**: Lagerbestände, Inventuren und Lagerbewegungen
-- **Rechnungswesen**: Rechnungserstellung, Eingangsrechnungen
-- **Lieferscheine**: Verkaufs- und Eingangslieferscheine
-- **Dokumentenmanagement**: Zentrales Dokumentenarchiv
-- **Projektmanagement**: Projektverwaltung und -controlling
-- **Zeiterfassung**: Arbeitszeiterfassung und -auswertung
+- **Dokumentenmanagement**: Scannen, Speichern und Verwalten von Geschäftsdokumenten mit OCR-Funktionalität
+- **E-Commerce-Integration**: Vollständige Produktverwaltung, Warenkorb und Bestellabwicklung
+- **KI-gestützte Empfehlungen**: Intelligente Produktempfehlungen für Kunden
+- **TSE-Integration**: Konformität mit den Anforderungen an elektronische Kassensysteme
+- **Fuhrwerkswaagen-Integration**: Anschluss und Management von industriellen Wägesystemen
 
-## Technologiestack
+## Technologie-Stack
 
-- **Backend**: Python 3.13.3 mit Starlette-Framework
-- **API**: RESTful-API mit JSON-Datenaustausch
-- **Datenbank**: SQLite/PostgreSQL mit SQLAlchemy ORM
-- **Frontend**: In Planung (Vue.js oder React)
-- **KI-Integration**: In Planung
-
-## Besonderheiten
-
-- **L3-Kompatibilität**: Unterstützt Datenformate und Schnittstellen wie ServiceERP L3
-- **Moderne Architektur**: Modulare und skalierbare Architektur
-- **Python 3.13.3-Unterstützung**: Optimiert für die neueste Python-Version
-- **Erweiterte Filterung**: Unterstützt komplexe Abfragen mit L3-ähnlicher Filtersyntax
+- **Backend**: Python mit FastAPI
+- **Datenbank**: SQLAlchemy ORM
+- **Authentifizierung**: JWT-basierte Authentifizierung
+- **KI-Komponenten**: Integrierte KI-Modelle für Datenanalyse und Empfehlungen
 
 ## Installation
 
-### Voraussetzungen
+```bash
+# Repository klonen
+git clone https://github.com/AI-ERP-Developer/ai-driven-erp.git
+cd ai-driven-erp
 
-- Python 3.13.3 oder höher
-- pip (Python-Paketmanager)
+# Virtuelle Umgebung erstellen und aktivieren
+python -m venv .venv
+.\.venv\Scripts\activate  # Windows
+# source .venv/bin/activate  # Linux/Mac
 
-### Setup
+# Abhängigkeiten installieren
+pip install -r requirements.txt
 
-1. Repository klonen:
-   ```bash
-   git clone https://github.com/benutzername/AI_driven_ERP.git
-   cd AI_driven_ERP
-   ```
+# Server starten
+cd backend
+python minimal_server.py
+```
 
-2. Virtuelle Umgebung erstellen und aktivieren:
-   ```bash
-   python -m venv .venv
-   # Unter Windows:
-   .\.venv\Scripts\activate
-   # Unter Linux/Mac:
-   source .venv/bin/activate
-   ```
+## Dokumentation
 
-3. Abhängigkeiten installieren:
-   ```bash
-   pip install -r backend/requirements.txt
-   ```
-
-4. Server starten:
-   ```bash
-   cd backend
-   python minimal_server.py
-   ```
-
-Der Server ist dann unter http://localhost:8000 erreichbar. Die API-Dokumentation ist unter http://localhost:8000/docs verfügbar.
+Die API-Dokumentation ist verfügbar unter `http://localhost:8002/docs` nach dem Start des Servers.
 
 ## Entwicklung
 
-Das Projekt befindet sich in aktiver Entwicklung. Beiträge sind willkommen!
-
-### Entwicklungsrichtlinien
-
-- Alle neuen Features sollten mit Tests abgedeckt sein
-- Code muss PEP 8 entsprechen
-- Änderungen müssen dokumentiert werden
+Das Projekt verwendet das Memory Bank System zur Dokumentation und Verfolgung des Entwicklungsfortschritts. Alle relevanten Informationen finden sich im Verzeichnis `memory-bank/`.
 
 ## Lizenz
 
-[MIT](LICENSE)
+Copyright © 2024
 
 ## Roadmap
 
