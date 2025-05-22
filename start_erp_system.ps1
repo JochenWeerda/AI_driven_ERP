@@ -1,239 +1,242 @@
-# Hauptskript zum Starten des ERP-Systems mit Überwachung
-# Startet sowohl Backend (mit Watchdog) als auch Frontend
-
-param (
-    [switch]$BackendOnly,  # Nur Backend starten
-    [switch]$FrontendOnly, # Nur Frontend starten
-    [int]$MaxRestarts = 5,  # Maximale Anzahl von Neustarts für den Watchdog
-    [int]$CheckInterval = 15,  # Überprüfungsintervall in Sekunden
-    [int]$TimeoutThreshold = 45,  # Timeout in Sekunden
-    [switch]$Debug  # Debug-Modus aktivieren
+#!/usr/bin/env pwsh
+<#
+.SYNOPSIS
+    Startet das AI-driven ERP-System.
+.DESCRIPTION
+    Dieses Skript startet die notwendigen Komponenten des ERP-Systems.
+    Es initialisiert die Python-Umgebung und startet den Backend-Server.
+.PARAMETER BackendOnly
+    Wenn gesetzt, wird nur der Backend-Server gestartet.
+.PARAMETER Development
+    Startet das System im Entwicklungsmodus mit zusätzlichen Debugging-Informationen.
+.PARAMETER ResetDb
+    Setzt die Datenbank zurück und erstellt sie neu.
+#>
+param(
+    [switch]$BackendOnly = $false,
+    [switch]$Development = $false,
+    [switch]$ResetDb = $false
 )
 
-# Debug-Ausgaben aktivieren
-$DebugMode = $Debug -or $true  # Während des Testens immer aktivieren
+# Konfiguration
+$PythonCmd = "python"
+$BackendDir = Join-Path $PSScriptRoot "backend"
+$FrontendDir = Join-Path $PSScriptRoot "frontend"
+$RequirementsFile = Join-Path $BackendDir "requirements.txt"
+$VenvDir = Join-Path $PSScriptRoot ".venv"
+$BackendPort = 8000
 
-# Funktion zum Anzeigen von Nachrichten
-function Show-Message {
+# Farben für Konsole
+function Write-ColorOutput {
     param (
         [string]$Message,
-        [ConsoleColor]$Color = [ConsoleColor]::White
+        [string]$Color = "White"
     )
-    
-    $originalColor = [Console]::ForegroundColor
-    [Console]::ForegroundColor = $Color
-    Write-Host "[$((Get-Date).ToString('HH:mm:ss'))] $Message"
-    [Console]::ForegroundColor = $originalColor
+    Write-Host $Message -ForegroundColor $Color
 }
 
-# Debug-Funktion
-function Debug-Message {
-    param (
-        [string]$Message
-    )
+# Funktion zum Überprüfen der Umgebung
+function Check-Environment {
+    Write-ColorOutput "[1/7] Überprüfe Python-Installation..." "Cyan"
     
-    if ($DebugMode) {
-        $originalColor = [Console]::ForegroundColor
-        [Console]::ForegroundColor = [ConsoleColor]::Magenta
-        Write-Host "[DEBUG] $Message"
-        [Console]::ForegroundColor = $originalColor
-    }
-}
-
-# Funktion zum Erstellen der Logverzeichnisse
-function Create-LogDirectories {
-    $logPath = Join-Path (Get-Location).Path "watchdog_logs"
-    
-    if (-not (Test-Path $logPath)) {
-        try {
-            New-Item -Path $logPath -ItemType Directory -Force | Out-Null
-            Debug-Message "Log-Verzeichnis erstellt: $logPath"
-        } catch {
-            Show-Message "Fehler beim Erstellen des Log-Verzeichnisses: $($_.Exception.Message)" ([ConsoleColor]::Red)
-        }
-    }
-}
-
-# Funktion zum Starten des Backends mit Watchdog
-function Start-BackendWithWatchdog {
-    Show-Message "Starte Backend mit Watchdog..." ([ConsoleColor]::Cyan)
-    
-    # Erstelle Logverzeichnisse
-    Create-LogDirectories
-    
-    # Absoluter Pfad zum Watchdog-Skript
-    $watchdogPath = Join-Path (Get-Location).Path "backend\watchdog.ps1"
-    
-    Debug-Message "Prüfe Watchdog-Pfad: $watchdogPath"
-    Debug-Message "Watchdog-Datei existiert: $(Test-Path $watchdogPath)"
-    
-    # Überprüfe, ob das Watchdog-Skript existiert
-    if (-not (Test-Path $watchdogPath)) {
-        Show-Message "FEHLER: Watchdog-Skript nicht gefunden unter: $watchdogPath" ([ConsoleColor]::Red)
-        return $null
-    }
-    
-    # Erstelle das Arbeitsverzeichnis für den Watchdog (Backend-Verzeichnis)
-    $workingDirectory = Join-Path (Get-Location).Path "backend"
-    Debug-Message "Arbeitsverzeichnis für Watchdog: $workingDirectory"
-    Debug-Message "Arbeitsverzeichnis existiert: $(Test-Path $workingDirectory)"
-    
-    # Überprüfe, ob alle erforderlichen Skripte vorhanden sind
-    $startBackendPath = Join-Path $workingDirectory "start_backend.ps1"
-    $watchdogLoggerPath = Join-Path $workingDirectory "watchdog_logger.ps1"
-    
-    Debug-Message "start_backend.ps1 existiert: $(Test-Path $startBackendPath)"
-    Debug-Message "watchdog_logger.ps1 existiert: $(Test-Path $watchdogLoggerPath)"
-    
-    if (-not (Test-Path $startBackendPath)) {
-        Show-Message "FEHLER: start_backend.ps1 nicht gefunden!" ([ConsoleColor]::Red)
-        return $null
-    }
-    
-    if (-not (Test-Path $watchdogLoggerPath)) {
-        Show-Message "WARNUNG: watchdog_logger.ps1 nicht gefunden - Watchdog wird ohne Logging ausgeführt" ([ConsoleColor]::Yellow)
-    }
-    
-    # Starte den Watchdog in einem neuen Fenster
     try {
-        Debug-Message "Starte Watchdog-Prozess mit Argumenten: -NoExit -File $watchdogPath -MaxRestarts $MaxRestarts -CheckInterval $CheckInterval -TimeoutThreshold $TimeoutThreshold"
-        
-        # Erstelle Argument-Array für Start-Process
-        $arguments = @(
-            "-NoExit"
-            "-File"
-            ".\watchdog.ps1"
-            "-MaxRestarts"
-            "$MaxRestarts"
-            "-CheckInterval"
-            "$CheckInterval"
-            "-TimeoutThreshold"
-            "$TimeoutThreshold"
-        )
-        
-        $process = Start-Process powershell -ArgumentList $arguments -PassThru -WorkingDirectory $workingDirectory
-        
-        if ($process -eq $null) {
-            Show-Message "FEHLER: Watchdog-Prozess konnte nicht gestartet werden!" ([ConsoleColor]::Red)
-            return $null
-        }
-        
-        Debug-Message "Watchdog-Prozess gestartet mit PID: $($process.Id)"
-        Show-Message "Watchdog gestartet (PID: $($process.Id))" ([ConsoleColor]::Green)
-        return $process
+        $pythonVersion = & $PythonCmd --version
+        Write-ColorOutput "Python-Version: $pythonVersion" "Green"
     }
     catch {
-        Show-Message "FEHLER: Konnte Watchdog nicht starten: $($_.Exception.Message)" ([ConsoleColor]::Red)
-        return $null
-    }
-}
-
-# Funktion zum Starten des Frontends
-function Start-Frontend {
-    Show-Message "Starte Frontend..." ([ConsoleColor]::Cyan)
-    
-    # Überprüfe, ob das Frontend-Verzeichnis existiert
-    $frontendPath = Join-Path (Get-Location).Path "frontend"
-    Debug-Message "Frontend-Pfad: $frontendPath"
-    Debug-Message "Frontend-Verzeichnis existiert: $(Test-Path $frontendPath)"
-    
-    if (-not (Test-Path $frontendPath)) {
-        Show-Message "FEHLER: Frontend-Verzeichnis nicht gefunden unter: $frontendPath" ([ConsoleColor]::Red)
-        return $null
+        Write-ColorOutput "Python konnte nicht gefunden werden. Bitte installieren Sie Python 3.12 oder höher." "Red"
+        exit 1
     }
     
-    # Starte das Frontend in einem neuen Fenster
-    try {
-        Debug-Message "Starte Frontend-Prozess mit Befehl: cd $frontendPath; npm run dev"
-        
-        $process = Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$frontendPath'; npm run dev" -PassThru
-        
-        if ($process -eq $null) {
-            Show-Message "FEHLER: Frontend-Prozess konnte nicht gestartet werden!" ([ConsoleColor]::Red)
-            return $null
+    # Prüfe ob venv existiert, sonst erstelle es
+    if (-not (Test-Path $VenvDir)) {
+        Write-ColorOutput "[2/7] Erstelle virtuelle Python-Umgebung..." "Cyan"
+        & $PythonCmd -m venv $VenvDir
+        if (-not $?) {
+            Write-ColorOutput "Fehler beim Erstellen der virtuellen Umgebung." "Red"
+            exit 1
         }
-        
-        Debug-Message "Frontend-Prozess gestartet mit PID: $($process.Id)"
-        Show-Message "Frontend gestartet (PID: $($process.Id))" ([ConsoleColor]::Green)
-        return $process
     }
-    catch {
-        Show-Message "FEHLER: Konnte Frontend nicht starten: $($_.Exception.Message)" ([ConsoleColor]::Red)
-        return $null
+    else {
+        Write-ColorOutput "[2/7] Virtuelle Python-Umgebung bereits vorhanden." "Green"
     }
-}
-
-# Hauptlogik
-Debug-Message "Aktuelles Verzeichnis: $(Get-Location)"
-Show-Message "=== AI-DRIVEN ERP SYSTEM STARTER ===" ([ConsoleColor]::Magenta)
-Show-Message "Starte Komponenten mit folgenden Einstellungen:" ([ConsoleColor]::White)
-Show-Message "- MaxRestarts: $MaxRestarts" ([ConsoleColor]::White)
-Show-Message "- CheckInterval: $CheckInterval Sekunden" ([ConsoleColor]::White)
-Show-Message "- TimeoutThreshold: $TimeoutThreshold Sekunden" ([ConsoleColor]::White)
-
-$backendProcess = $null
-$frontendProcess = $null
-
-# Starte die gewünschten Komponenten
-if (-not $FrontendOnly) {
-    $backendProcess = Start-BackendWithWatchdog
     
-    if ($backendProcess -eq $null) {
-        Show-Message "KRITISCHER FEHLER: Backend konnte nicht gestartet werden. Beende Starter." ([ConsoleColor]::Red)
+    # Aktiviere venv
+    Write-ColorOutput "[3/7] Aktiviere virtuelle Python-Umgebung..." "Cyan"
+    $activateScript = Join-Path $VenvDir "Scripts\Activate.ps1"
+    if (Test-Path $activateScript) {
+        & $activateScript
+        if (-not $?) {
+            Write-ColorOutput "Fehler beim Aktivieren der virtuellen Umgebung." "Red"
+            exit 1
+        }
+        Write-ColorOutput "Virtuelle Umgebung aktiviert." "Green"
+    }
+    else {
+        Write-ColorOutput "Aktivierungsskript nicht gefunden: $activateScript" "Red"
+        exit 1
+    }
+    
+    # Installiere Abhängigkeiten
+    Write-ColorOutput "[4/7] Installiere Abhängigkeiten..." "Cyan"
+    if (Test-Path $RequirementsFile) {
+        & python -m pip install -r $RequirementsFile
+        if (-not $?) {
+            Write-ColorOutput "Fehler beim Installieren der Abhängigkeiten." "Red"
+            exit 1
+        }
+        Write-ColorOutput "Abhängigkeiten erfolgreich installiert." "Green"
+    }
+    else {
+        Write-ColorOutput "Requirements-Datei nicht gefunden: $RequirementsFile" "Red"
         exit 1
     }
 }
 
-if (-not $BackendOnly) {
-    $frontendProcess = Start-Frontend
+# Funktion zum Überprüfen des Backend-Codes
+function Check-Backend {
+    Write-ColorOutput "[5/7] Überprüfe Backend-Code..." "Cyan"
     
-    if ($frontendProcess -eq $null -and -not $BackendOnly) {
-        Show-Message "FEHLER: Frontend konnte nicht gestartet werden." ([ConsoleColor]::Red)
+    # Prüfe ob main.py existiert
+    $mainPyPath = Join-Path $BackendDir "main.py"
+    if (Test-Path $mainPyPath) {
+        Write-ColorOutput "main.py gefunden." "Green"
+    }
+    else {
+        Write-ColorOutput "main.py nicht gefunden: $mainPyPath" "Red"
+        exit 1
+    }
+    
+    # Prüfe Python-Syntax
+    & python -c "import os; path = os.path.normpath('$($mainPyPath.Replace('\', '\\'))'); import py_compile; py_compile.compile(path)"
+    if ($?) {
+        Write-ColorOutput "Syntaxprüfung erfolgreich" "Green"
+    }
+    else {
+        Write-ColorOutput "Fehler in der Python-Syntax gefunden." "Red"
+        exit 1
+    }
+    
+    # Zeige Python-Pfad zur Fehlersuche
+    if ($Development) {
+        $pythonPath = & python -c "import sys; print(sys.path)"
+        Write-ColorOutput "Python-Pfad: $pythonPath" "Gray"
     }
 }
 
-# Warte auf Benutzerinteraktion
-Show-Message "Drücken Sie STRG+C, um alle Prozesse zu beenden..." ([ConsoleColor]::Yellow)
+# Funktion zum Starten des Backend-Servers
+function Start-Backend {
+    Write-ColorOutput "[6/7] Starte Backend-Server..." "Cyan"
+    
+    # Setze Umgebungsvariablen
+    $env:PYTHONPATH = $PSScriptRoot
+    
+    # Wechsle ins Backend-Verzeichnis
+    Set-Location $BackendDir
+    
+    # Starte den Backend-Server
+    Write-ColorOutput "Server wird unter http://localhost:$BackendPort verfügbar sein" "Yellow"
+    Write-ColorOutput "API-Dokumentation: http://localhost:$BackendPort/docs" "Yellow"
+    Write-ColorOutput "Health-Endpoint: http://localhost:$BackendPort/health" "Yellow"
+    Write-ColorOutput "Drücken Sie STRG+C, um den Server zu beenden." "Yellow"
+    Write-ColorOutput "=======================================" "Yellow"
+    
+    # Verwende einen modifizierten Import-Ansatz für den Server-Start
+    $pythonScript = @"
+import sys
+import os
 
-try {
-    # Überwache die Prozesse
-    while ($true) {
-        $allStopped = $true
-        
-        if ($backendProcess -ne $null) {
-            $backendRunning = -not $backendProcess.HasExited
-            $allStopped = $allStopped -and -not $backendRunning
-            Debug-Message "Backend-Prozess läuft: $backendRunning"
-        }
-        
-        if ($frontendProcess -ne $null) {
-            $frontendRunning = -not $frontendProcess.HasExited
-            $allStopped = $allStopped -and -not $frontendRunning
-            Debug-Message "Frontend-Prozess läuft: $frontendRunning"
-        }
-        
-        if ($allStopped) {
-            Show-Message "Alle Prozesse wurden beendet." ([ConsoleColor]::Yellow)
-            break
-        }
-        
-        Start-Sleep -Seconds 5
+# Füge das Hauptverzeichnis zum Python-Pfad hinzu
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Importiere die notwendigen Module
+try:
+    from backend.core.path_registry import get_registry
+    registry = get_registry()
+except ImportError:
+    print("Pfadregister nicht gefunden, verwende Standardpfade.")
+
+# Importiere FastAPI-Komponenten
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from backend.app.core.config import settings
+from backend.app.api.v1.api import api_router
+
+# Erstelle die FastAPI-Anwendung
+app = FastAPI(
+    title=settings.PROJECT_NAME,
+    version=settings.VERSION,
+    openapi_url=f"{settings.API_V1_STR}/openapi.json"
+)
+
+# CORS-Middleware konfigurieren
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=settings.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# API-Router einbinden
+app.include_router(api_router, prefix=settings.API_V1_STR)
+
+# Root-Endpunkt
+@app.get("/")
+async def root():
+    return {"message": "Willkommen beim AI-Driven ERP System"}
+
+# Gesundheitscheck
+@app.get("/health")
+async def health_check():
+    from datetime import datetime
+    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+
+# Für direkte Ausführung
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=$BackendPort, reload=True)
+"@
+    
+    # Speichere das Skript in einer temporären Datei
+    $tempScriptPath = Join-Path $BackendDir "server_start.py"
+    $pythonScript | Out-File -FilePath $tempScriptPath -Encoding utf8
+    
+    try {
+        # Starte den Server
+        & python $tempScriptPath
+    }
+    finally {
+        # Lösche die temporäre Datei
+        Remove-Item -Path $tempScriptPath -ErrorAction SilentlyContinue
     }
 }
-catch {
-    Debug-Message "Fehler in der Hauptschleife: $($_.Exception.Message)"
+
+# Funktion zum Starten des Frontend-Servers (für zukünftige Implementierung)
+function Start-Frontend {
+    Write-ColorOutput "[7/7] Starte Frontend-Server..." "Cyan"
+    # Hier könnte die Frontend-Implementierung starten
+    Write-ColorOutput "Frontend-Server-Start noch nicht implementiert." "Yellow"
 }
-finally {
-    # Bereinigen, wenn der Benutzer STRG+C drückt
-    if ($backendProcess -ne $null -and -not $backendProcess.HasExited) {
-        Show-Message "Beende Backend-Prozess..." ([ConsoleColor]::Yellow)
-        Stop-Process -Id $backendProcess.Id -Force -ErrorAction SilentlyContinue
-    }
+
+# Hauptfunktion
+function Main {
+    Write-ColorOutput "AI-Driven ERP-System wird gestartet..." "Green"
     
-    if ($frontendProcess -ne $null -and -not $frontendProcess.HasExited) {
-        Show-Message "Beende Frontend-Prozess..." ([ConsoleColor]::Yellow)
-        Stop-Process -Id $frontendProcess.Id -Force -ErrorAction SilentlyContinue
-    }
+    # Überprüfe und initialisiere die Umgebung
+    Check-Environment
     
-    Show-Message "Alle Prozesse wurden beendet." ([ConsoleColor]::Green)
-} 
+    # Überprüfe den Backend-Code
+    Check-Backend
+    
+    # Starte den Backend-Server
+    Start-Backend
+    
+    # Starte den Frontend-Server, wenn nicht nur Backend angefordert wurde
+    if (-not $BackendOnly) {
+        Start-Frontend
+    }
+}
+
+# Starte das Hauptprogramm
+Main 

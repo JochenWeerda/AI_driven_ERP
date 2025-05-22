@@ -1,83 +1,90 @@
-# AI-gesteuertes ERP-System
+# AI-Driven ERP-System
 
-Ein innovatives ERP-System, das traditionelle Enterprise Resource Planning-Funktionalitäten mit fortschrittlichen KI-Funktionen verbindet.
+Ein modernes, KI-gesteuertes Enterprise Resource Planning System, das die Funktionalitäten klassischer ERP-Systeme (wie ServiceERP L3) bietet und durch KI-Funktionen erweitert.
 
-## Projektübersicht
+## Funktionen
 
-Dieses Projekt zielt darauf ab, ein modulares ERP-System zu entwickeln, das KI-Funktionen integriert, um Geschäftsprozesse zu optimieren, die Entscheidungsfindung zu unterstützen und den manuellen Aufwand zu reduzieren.
+- **Adressverwaltung**: Kunden-, Lieferanten- und Partneradressen
+- **Artikelverwaltung**: Artikelstammdaten, Lagerbestände, Preise
+- **Auftragsverwaltung**: Auftragserfassung, -bearbeitung und -verfolgung
+- **Bestellwesen**: Lieferantenbestellungen und Bestellverfolgung
+- **Lagerverwaltung**: Lagerbestände, Inventuren und Lagerbewegungen
+- **Rechnungswesen**: Rechnungserstellung, Eingangsrechnungen
+- **Lieferscheine**: Verkaufs- und Eingangslieferscheine
+- **Dokumentenmanagement**: Zentrales Dokumentenarchiv
+- **Projektmanagement**: Projektverwaltung und -controlling
+- **Zeiterfassung**: Arbeitszeiterfassung und -auswertung
 
-## Memory Bank System
+## Technologiestack
 
-Dieses Projekt verwendet das Memory Bank System für eine strukturierte Entwicklung. Das System besteht aus verschiedenen benutzerdefinierten Modi, die verschiedene Phasen des Entwicklungsprozesses repräsentieren.
+- **Backend**: Python 3.13.3 mit Starlette-Framework
+- **API**: RESTful-API mit JSON-Datenaustausch
+- **Datenbank**: SQLite/PostgreSQL mit SQLAlchemy ORM
+- **Frontend**: In Planung (Vue.js oder React)
+- **KI-Integration**: In Planung
 
-### Modi und ihre Funktionen
+## Besonderheiten
 
-1. **🔍 VAN (Initialisierung)**
-   - Projektanalyse
-   - Komplexitätsbestimmung
-   - Grundlegende Setup-Aufgaben
+- **L3-Kompatibilität**: Unterstützt Datenformate und Schnittstellen wie ServiceERP L3
+- **Moderne Architektur**: Modulare und skalierbare Architektur
+- **Python 3.13.3-Unterstützung**: Optimiert für die neueste Python-Version
+- **Erweiterte Filterung**: Unterstützt komplexe Abfragen mit L3-ähnlicher Filtersyntax
 
-2. **📋 PLAN (Aufgabenplanung)**
-   - Detaillierte Planung
-   - Aufgabenaufschlüsselung
-   - Priorisierung
+## Installation
 
-3. **🎨 CREATIVE (Design-Entscheidungen)**
-   - Architekturentwurf
-   - Design-Optionen erkunden
-   - Technologieauswahl
+### Voraussetzungen
 
-4. **⚒️ IMPLEMENT (Code-Implementierung)**
-   - Codeentwicklung
-   - Testing
-   - Integration
+- Python 3.13.3 oder höher
+- pip (Python-Paketmanager)
 
-5. **🔍 REFLECT (Überprüfung)**
-   - Code-Review
-   - Leistungsoptimierung
-   - Qualitätssicherung
+### Setup
 
-6. **📚 ARCHIVE (Dokumentation)**
-   - Umfassende Dokumentation
-   - Wartungshinweise
-   - Benutzerhandbücher
+1. Repository klonen:
+   ```bash
+   git clone https://github.com/benutzername/AI_driven_ERP.git
+   cd AI_driven_ERP
+   ```
 
-### Verwendung des Memory Bank Systems
+2. Virtuelle Umgebung erstellen und aktivieren:
+   ```bash
+   python -m venv .venv
+   # Unter Windows:
+   .\.venv\Scripts\activate
+   # Unter Linux/Mac:
+   source .venv/bin/activate
+   ```
 
-1. **Start mit VAN-Modus**:
-   - Wechsle zum VAN-Modus in Cursor
-   - Gib "VAN" ein, um den Initialisierungsprozess zu starten
-   - Der VAN-Modus analysiert die Projektstruktur und bestimmt die Komplexität
+3. Abhängigkeiten installieren:
+   ```bash
+   pip install -r backend/requirements.txt
+   ```
 
-2. **Workflow basierend auf der Komplexität**:
-   - **Level 1**: VAN → IMPLEMENT
-   - **Level 2**: VAN → PLAN → IMPLEMENT → REFLECT
-   - **Level 3-4**: VAN → PLAN → CREATIVE → IMPLEMENT → REFLECT → ARCHIVE
+4. Server starten:
+   ```bash
+   cd backend
+   python minimal_server.py
+   ```
 
-3. **Modus-spezifische Befehle**:
-   - VAN - Projekt initialisieren und Komplexität bestimmen
-   - PLAN - Detaillierten Implementierungsplan erstellen
-   - CREATIVE - Design-Optionen für komplexe Komponenten erkunden
-   - IMPLEMENT - Systematisch geplante Komponenten entwickeln
-   - REFLECT - Überprüfen und Erkenntnisse dokumentieren
-   - ARCHIVE - Umfassende Dokumentation erstellen
-   - QA - Technische Implementierung validieren (kann von jedem Modus aus aufgerufen werden)
+Der Server ist dann unter http://localhost:8000 erreichbar. Die API-Dokumentation ist unter http://localhost:8000/docs verfügbar.
 
-## Projektstruktur
+## Entwicklung
 
-- `memory-bank/` - Enthält alle Memory Bank Dateien zur Dokumentation des Projekts
-- `.cursor/rules/isolation_rules/` - Regeln für das Memory Bank System
-- `custom_modes/` - Anweisungen für die benutzerdefinierten Modi
+Das Projekt befindet sich in aktiver Entwicklung. Beiträge sind willkommen!
 
-## Erste Schritte
+### Entwicklungsrichtlinien
 
-Um mit dem Projekt zu beginnen:
-
-1. Öffne Cursor und stelle sicher, dass alle benutzerdefinierten Modi konfiguriert sind
-2. Wechsle zum VAN-Modus
-3. Gib "VAN" ein, um das Projekt zu initialisieren
-4. Folge den Anweisungen des Systems für die weiteren Schritte
+- Alle neuen Features sollten mit Tests abgedeckt sein
+- Code muss PEP 8 entsprechen
+- Änderungen müssen dokumentiert werden
 
 ## Lizenz
 
-[MIT](https://choosealicense.com/licenses/mit/)
+[MIT](LICENSE)
+
+## Roadmap
+
+- Frontend-Implementierung
+- KI-basierte Vorschläge für Bestellungen
+- Automatisierte Dokumentenerkennung
+- Integration mit externen Diensten
+- Mobile App
