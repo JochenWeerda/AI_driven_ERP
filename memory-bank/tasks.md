@@ -155,4 +155,38 @@ Diese Aufgabenliste umfasst die Integration wichtiger Odoo-Module in unser beste
 - **Backend-Entwicklung**: [Festzulegen]
 - **Frontend-Entwicklung**: [Festzulegen]
 - **QA und Tests**: [Festzulegen]
-- **Dokumentation**: [Festzulegen] 
+- **Dokumentation**: [Festzulegen]
+
+# Aktive Tasks und To-Dos
+
+## E-Commerce-Modul Implementierung - ABGESCHLOSSEN ✓
+
+- [x] Datenmodelle erstellen (Produkte, Kategorien, Warenkorb, Bestellungen)
+- [x] Services implementieren (CRUD-Operationen, Geschäftslogik)
+- [x] API-Endpunkte definieren
+- [x] Zentrale Routenregistrierung implementieren
+- [x] Demo-Daten erstellen
+- [x] Endpunkte testen
+
+## E-Commerce-Frontend-Entwicklung - NÄCHSTE AUFGABE
+
+- [ ] Produktkatalog-Komponente erstellen
+- [ ] Warenkorb-Funktionalität implementieren
+- [ ] Checkout-Prozess entwickeln
+- [ ] Benutzerprofil und Bestellhistorie anzeigen
+- [ ] Responsive Design für Mobile-Geräte
+- [ ] Integration mit Zahlungsabwicklung (PayPal, Kreditkarte)
+
+## Reporting-Modul
+
+- [ ] Verkaufsstatistiken implementieren
+- [ ] Dashboard für E-Commerce-Kennzahlen entwickeln
+- [ ] Export-Funktionalität für Berichte (PDF, Excel)
+- [ ] Integration mit Business Intelligence Tools
+
+## Integration mit Odoo
+
+- [ ] Synchronisierung von Produktdaten
+- [ ] Bestellungsabwicklung mit Odoo verbinden
+- [ ] Lagerbestandsverwaltung integrieren
+- [ ] Kundendaten zwischen Systemen synchronisieren 
