@@ -407,6 +407,195 @@ dokumente = [
     }
 ]
 
+# E-Commerce-Daten
+produkte = [
+    {
+        "id": 1,
+        "sku": "P-10001",
+        "name": "Business Laptop Pro",
+        "description": "Leistungsstarker Laptop für professionelle Anwendungen",
+        "price": 1299.99,
+        "cost_price": 899.99,
+        "inventory_level": 25,
+        "category_id": 1,
+        "tax_rate": 19.0,
+        "weight": 1.8,
+        "dimensions": "35 x 25 x 2 cm",
+        "active": True,
+        "created_at": "2024-01-01T10:00:00",
+        "updated_at": None,
+        "image_urls": ["https://example.com/images/laptop1.jpg"],
+        "tags": ["business", "laptop", "premium"]
+    },
+    {
+        "id": 2,
+        "sku": "P-10002",
+        "name": "Wireless Office Headset",
+        "description": "Komfortables Headset für Bürokommunikation",
+        "price": 129.99,
+        "cost_price": 69.99,
+        "inventory_level": 42,
+        "category_id": 2,
+        "tax_rate": 19.0,
+        "weight": 0.3,
+        "dimensions": "20 x 18 x 8 cm",
+        "active": True,
+        "created_at": "2024-01-05T11:30:00",
+        "updated_at": None,
+        "image_urls": ["https://example.com/images/headset1.jpg"],
+        "tags": ["audio", "büro", "kommunikation"]
+    }
+]
+
+produkt_kategorien = [
+    {
+        "id": 1,
+        "name": "Computer & Laptops",
+        "description": "Computer, Laptops und Zubehör",
+        "parent_id": None,
+        "active": True,
+        "created_at": "2024-01-01T08:00:00",
+        "updated_at": None
+    },
+    {
+        "id": 2,
+        "name": "Audio & Headsets",
+        "description": "Kopfhörer, Mikrofone und Audiozubehör",
+        "parent_id": None,
+        "active": True,
+        "created_at": "2024-01-01T08:15:00",
+        "updated_at": None
+    }
+]
+
+warenkörbe = [
+    {
+        "id": 1,
+        "customer_id": 1,
+        "session_id": "sess_abc123",
+        "created_at": "2024-03-15T14:30:00",
+        "updated_at": "2024-03-15T14:45:00",
+        "items": [
+            {
+                "id": 1,
+                "cart_id": 1,
+                "product_id": 1,
+                "quantity": 1,
+                "price": 1299.99,
+                "created_at": "2024-03-15T14:30:00",
+                "updated_at": None
+            }
+        ]
+    }
+]
+
+bestellungen_ecommerce = [
+    {
+        "id": 1,
+        "order_number": "ORD-20240310-abc123",
+        "customer_id": 1,
+        "order_date": "2024-03-10T15:30:00",
+        "status": "versandt",
+        "shipping_address_id": 1,
+        "billing_address_id": 1,
+        "payment_method": "kreditkarte",
+        "shipping_method": "standard",
+        "subtotal": 1299.99,
+        "tax_amount": 246.99,
+        "shipping_cost": 4.99,
+        "discount_amount": 0.0,
+        "total_amount": 1551.97,
+        "notes": "Bitte vor der Haustür abstellen",
+        "created_at": "2024-03-10T15:30:00",
+        "updated_at": "2024-03-11T09:15:00"
+    }
+]
+
+bestellpositionen = [
+    {
+        "id": 1,
+        "order_id": 1,
+        "product_id": 1,
+        "product_name": "Business Laptop Pro",
+        "quantity": 1,
+        "unit_price": 1299.99,
+        "tax_rate": 19.0,
+        "discount_amount": 0.0,
+        "total_price": 1546.98,
+        "created_at": "2024-03-10T15:30:00"
+    }
+]
+
+adressen_ecommerce = [
+    {
+        "id": 1,
+        "customer_id": 1,
+        "address_type": "shipping",
+        "first_name": "Thomas",
+        "last_name": "Müller",
+        "company": "Muster GmbH",
+        "street": "Hauptstraße 1",
+        "additional": "Etage 3",
+        "postal_code": "10115",
+        "city": "Berlin",
+        "country": "Deutschland",
+        "phone": "+49 30 12345678",
+        "is_default": True,
+        "created_at": "2024-01-15T10:00:00",
+        "updated_at": None
+    },
+    {
+        "id": 2,
+        "customer_id": 1,
+        "address_type": "billing",
+        "first_name": "Thomas",
+        "last_name": "Müller",
+        "company": "Muster GmbH",
+        "street": "Hauptstraße 1",
+        "additional": "Etage 3",
+        "postal_code": "10115",
+        "city": "Berlin",
+        "country": "Deutschland",
+        "phone": "+49 30 12345678",
+        "is_default": True,
+        "created_at": "2024-01-15T10:00:00",
+        "updated_at": None
+    }
+]
+
+rabatte = [
+    {
+        "id": 1,
+        "code": "SOMMER2024",
+        "description": "Sommerrabatt 2024",
+        "discount_type": "prozentual",
+        "discount_value": 10.0,
+        "minimum_order_value": 50.0,
+        "valid_from": "2024-06-01T00:00:00",
+        "valid_to": "2024-08-31T23:59:59",
+        "usage_limit": 1000,
+        "used_count": 45,
+        "active": True,
+        "created_at": "2024-05-15T09:00:00",
+        "updated_at": None
+    }
+]
+
+bewertungen = [
+    {
+        "id": 1,
+        "product_id": 1,
+        "customer_id": 1,
+        "rating": 5,
+        "title": "Hervorragendes Produkt",
+        "comment": "Bin sehr zufrieden mit dem Laptop. Schnell, leise und tolles Display.",
+        "verified_purchase": True,
+        "created_at": "2024-03-20T18:30:00",
+        "updated_at": None,
+        "is_approved": True
+    }
+]
+
 # --------------- API-Endpunkte ---------------
 
 # Root-Endpunkt
@@ -764,6 +953,50 @@ async def openapi_spec(request):
         }
     })
 
+# E-Commerce-Routen
+async def get_produkte(request):
+    return JSONResponse({"produkte": produkte})
+
+async def get_produkt_by_id(request):
+    produkt_id = int(request.path_params["id"])
+    for p in produkte:
+        if p["id"] == produkt_id:
+            return JSONResponse(p)
+    return JSONResponse({"error": "Produkt nicht gefunden"}, status_code=404)
+
+async def get_produkt_kategorien(request):
+    return JSONResponse({"kategorien": produkt_kategorien})
+
+async def get_produkt_kategorie_by_id(request):
+    kategorie_id = int(request.path_params["id"])
+    for k in produkt_kategorien:
+        if k["id"] == kategorie_id:
+            return JSONResponse(k)
+    return JSONResponse({"error": "Kategorie nicht gefunden"}, status_code=404)
+
+async def get_warenkorb(request):
+    # In einer echten Anwendung würde hier die Session-ID überprüft werden
+    return JSONResponse(warenkörbe[0])
+
+async def get_bestellungen_ecommerce(request):
+    return JSONResponse({"bestellungen": bestellungen_ecommerce})
+
+async def get_bestellung_ecommerce_by_id(request):
+    bestellung_id = int(request.path_params["id"])
+    for b in bestellungen_ecommerce:
+        if b["id"] == bestellung_id:
+            return JSONResponse(b)
+    return JSONResponse({"error": "Bestellung nicht gefunden"}, status_code=404)
+
+async def get_adressen_ecommerce(request):
+    return JSONResponse({"adressen": adressen_ecommerce})
+
+async def get_rabatte(request):
+    return JSONResponse({"rabatte": rabatte})
+
+async def get_bewertungen(request):
+    return JSONResponse({"bewertungen": bewertungen})
+
 # Routen definieren
 routes = [
     # Grundlegende Endpunkte
@@ -839,6 +1072,18 @@ routes = [
     Route("/api/v1/dokumente", endpoint=get_dokumente),
     Route("/api/v1/dms", endpoint=get_dokumente),  # L3-Kompatibilität
     Route("/api/v1/dokumente/{dokument_id:int}", endpoint=get_dokument_by_id),
+    
+    # Neue E-Commerce-Routen
+    Route("/api/v1/produkte", get_produkte),
+    Route("/api/v1/produkte/{id:int}", get_produkt_by_id),
+    Route("/api/v1/kategorien", get_produkt_kategorien),
+    Route("/api/v1/kategorien/{id:int}", get_produkt_kategorie_by_id),
+    Route("/api/v1/warenkorb", get_warenkorb),
+    Route("/api/v1/ecommerce/bestellungen", get_bestellungen_ecommerce),
+    Route("/api/v1/ecommerce/bestellungen/{id:int}", get_bestellung_ecommerce_by_id),
+    Route("/api/v1/ecommerce/adressen", get_adressen_ecommerce),
+    Route("/api/v1/rabatte", get_rabatte),
+    Route("/api/v1/bewertungen", get_bewertungen),
 ]
 
 # Middleware definieren
@@ -856,6 +1101,6 @@ app = Starlette(
 # Server starten
 if __name__ == "__main__":
     print("Minimaler Server wird gestartet...")
-    print("Server läuft auf http://localhost:8000")
-    print("API-Dokumentation verfügbar unter: http://localhost:8000/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    print("Server läuft auf http://localhost:8002")
+    print("API-Dokumentation verfügbar unter: http://localhost:8002/docs")
+    uvicorn.run(app, host="0.0.0.0", port=8002) 

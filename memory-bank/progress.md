@@ -51,4 +51,43 @@ Als nächstes werden wir uns auf die Verfeinerung der Geschäftslogik, umfassend
 - [ ] Berichte und Statistiken
 - [ ] Umfassende Tests
 - [ ] Deployment-Pipeline
-- [ ] Produktivversion 
+- [ ] Produktivversion
+
+## E-Commerce-Modul Integration (2024-06-19)
+
+### Implementierungsfortschritt:
+- ✅ Modelle und Datenstrukturen für E-Commerce-Funktionen erstellt
+- ✅ Services für Produkt-, Warenkorb- und Bestellungsverwaltung implementiert
+- ✅ API-Endpunkte für E-Commerce-Funktionen definiert
+- ✅ Demo-Daten für E-Commerce-Funktionen erstellt
+- ✅ E-Commerce-Routen in das zentrale Routenregister im minimal_server.py integriert:
+  ```python
+  # Neue E-Commerce-Routen
+  Route("/api/v1/produkte", get_produkte),
+  Route("/api/v1/produkte/{id:int}", get_produkt_by_id),
+  Route("/api/v1/kategorien", get_produkt_kategorien),
+  Route("/api/v1/kategorien/{id:int}", get_produkt_kategorie_by_id),
+  Route("/api/v1/warenkorb", get_warenkorb),
+  Route("/api/v1/ecommerce/bestellungen", get_bestellungen_ecommerce),
+  Route("/api/v1/ecommerce/bestellungen/{id:int}", get_bestellung_ecommerce_by_id),
+  Route("/api/v1/ecommerce/adressen", get_adressen_ecommerce),
+  Route("/api/v1/rabatte", get_rabatte),
+  Route("/api/v1/bewertungen", get_bewertungen),
+  ```
+
+### Getestete Funktionalität:
+- ✅ Minimaler Server läuft erfolgreich auf Port 8002
+- ✅ Die Dokumentenmanagement-API-Endpunkte funktionieren korrekt
+- ❌ E-Commerce-Endpunkte funktionieren nicht wie erwartet (404 Fehler bei `/api/v1/produkte`)
+
+### Nächste Schritte:
+1. Debug der E-Commerce-Endpunkte - prüfen warum /api/v1/produkte 404 zurückliefert
+2. Implementierung der CRUD-Operationen für E-Commerce-Entitäten
+3. Integration der E-Commerce-Daten mit dem bestehenden ERP-System
+4. Testen aller E-Commerce-Funktionen
+5. Dokumentation der E-Commerce-API
+
+### Hinweise:
+- Der Server läuft stabil auf Port 8002
+- Python 3.13.3 erfordert Anpassungen in der Implementierung aufgrund von Inkompatibilitäten mit Pydantic/FastAPI
+- Zentrales Routenregister in minimal_server.py funktioniert grundsätzlich, aber die E-Commerce-Routen müssen debuggt werden 
