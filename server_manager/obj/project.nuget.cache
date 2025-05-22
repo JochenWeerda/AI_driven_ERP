@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "dgSpecHash": "5A/9zGrE2vU=",
+  "success": true,
+  "projectFilePath": "C:\\AI_driven_ERP\\AI_driven_ERP\\server_manager\\ERP_Server_Manager.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\Jochen\\.nuget\\packages\\microsoft.netcore.app.runtime.win-x64\\10.0.0-preview.4.25258.110\\microsoft.netcore.app.runtime.win-x64.10.0.0-preview.4.25258.110.nupkg.sha512",
+    "C:\\Users\\Jochen\\.nuget\\packages\\microsoft.windowsdesktop.app.runtime.win-x64\\10.0.0-preview.4.25258.110\\microsoft.windowsdesktop.app.runtime.win-x64.10.0.0-preview.4.25258.110.nupkg.sha512",
+    "C:\\Users\\Jochen\\.nuget\\packages\\microsoft.aspnetcore.app.runtime.win-x64\\10.0.0-preview.4.25258.110\\microsoft.aspnetcore.app.runtime.win-x64.10.0.0-preview.4.25258.110.nupkg.sha512"
+  ],
+  "logs": []
+}
