@@ -27,6 +27,7 @@ Die Komponentenbeziehungen werden nach der Analyse und Planung definiert.
 2. **Memory-First-Ansatz**: Bei jeder Entwicklung muss die Memory Bank zuerst konsultiert werden, um bestehende Patterns, Konventionen und Abhängigkeiten zu verstehen.
 3. **Dokumentationspflicht**: Jede neue Funktion muss vollständig in der Memory Bank dokumentiert werden.
 4. **Zentralregister-Prinzip**: Alle neuen Endpunkte müssen im zentralen Routenregister in `minimal_server.py` registriert werden.
+5. **ERP-Integrationsansatz**: Alle Module und Funktionen müssen mit unserem eigenen AI-driven ERP-System integriert werden, NICHT mit Odoo. Dies ist eine grundlegende Richtlinie für alle zukünftigen Entwicklungen und Integrationen.
 
 ### Integrationsprozess für neue Module
 

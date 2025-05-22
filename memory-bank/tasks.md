@@ -184,9 +184,15 @@ Diese Aufgabenliste umfasst die Integration wichtiger Odoo-Module in unser beste
 - [ ] Export-Funktionalität für Berichte (PDF, Excel)
 - [ ] Integration mit Business Intelligence Tools
 
-## Integration mit Odoo
+## Integration mit AI-driven ERP (Nicht Odoo)
 
 - [ ] Synchronisierung von Produktdaten
-- [ ] Bestellungsabwicklung mit Odoo verbinden
+- [ ] Bestellungsabwicklung mit internem ERP-System verbinden
 - [ ] Lagerbestandsverwaltung integrieren
-- [ ] Kundendaten zwischen Systemen synchronisieren 
+- [ ] Kundendaten zwischen Systemen synchronisieren
+
+## Wichtige Hinweise zur Implementierung
+
+- Alle Integrationen erfolgen ausschließlich mit unserem eigenen AI-driven ERP-System, nicht mit Odoo
+- Bestehende Odoo-Referenzen in der Dokumentation sind veraltet und müssen entsprechend angepasst werden
+- Bei Architekturentscheidungen ist stets die systemPatterns.md zu konsultieren 
