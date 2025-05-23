@@ -1,242 +1,285 @@
 #!/usr/bin/env pwsh
-<#
-.SYNOPSIS
-    Startet das AI-driven ERP-System.
-.DESCRIPTION
-    Dieses Skript startet die notwendigen Komponenten des ERP-Systems.
-    Es initialisiert die Python-Umgebung und startet den Backend-Server.
-.PARAMETER BackendOnly
-    Wenn gesetzt, wird nur der Backend-Server gestartet.
-.PARAMETER Development
-    Startet das System im Entwicklungsmodus mit zusätzlichen Debugging-Informationen.
-.PARAMETER ResetDb
-    Setzt die Datenbank zurück und erstellt sie neu.
-#>
-param(
-    [switch]$BackendOnly = $false,
-    [switch]$Development = $false,
-    [switch]$ResetDb = $false
+# ERP-System PowerShell-Startskript
+# Startet das gesamte ERP-System mit allen Komponenten
+
+param (
+    [switch]$BackendOnly,
+    [switch]$MonitoringOnly,
+    [switch]$DashboardOnly,
+    [switch]$BenchmarkOnly,
+    [switch]$Verbose,
+    [int]$ServerPort = 8003,
+    [int]$DashboardPort = 5000,
+    [switch]$NoBrowser,
+    [switch]$Help
 )
 
 # Konfiguration
-$PythonCmd = "python"
-$BackendDir = Join-Path $PSScriptRoot "backend"
-$FrontendDir = Join-Path $PSScriptRoot "frontend"
-$RequirementsFile = Join-Path $BackendDir "requirements.txt"
-$VenvDir = Join-Path $PSScriptRoot ".venv"
-$BackendPort = 8000
+$PROJECT_ROOT = $PSScriptRoot
+$BACKEND_DIR = Join-Path -Path $PROJECT_ROOT -ChildPath "backend"
+$FRONTEND_DIR = Join-Path -Path $PROJECT_ROOT -ChildPath "frontend"
+$VENV_DIR = Join-Path -Path $PROJECT_ROOT -ChildPath ".venv"
+$PYTHON_CMD = Join-Path -Path $VENV_DIR -ChildPath "Scripts\python.exe"
+$NPM_CMD = "npm"
 
-# Farben für Konsole
-function Write-ColorOutput {
-    param (
-        [string]$Message,
-        [string]$Color = "White"
-    )
-    Write-Host $Message -ForegroundColor $Color
+# Farbige Ausgabe für bessere Lesbarkeit
+function Write-ColorOutput($ForegroundColor) {
+    $fc = $host.UI.RawUI.ForegroundColor
+    $host.UI.RawUI.ForegroundColor = $ForegroundColor
+    if ($args) {
+        Write-Output $args
+    }
+    else {
+        $input | Write-Output
+    }
+    $host.UI.RawUI.ForegroundColor = $fc
 }
 
-# Funktion zum Überprüfen der Umgebung
+function Write-Success($message) {
+    Write-ColorOutput Green "[ERFOLG] $message"
+}
+
+function Write-Info($message) {
+    Write-ColorOutput Cyan "[INFO] $message"
+}
+
+function Write-Warning($message) {
+    Write-ColorOutput Yellow "[WARNUNG] $message"
+}
+
+function Write-Error($message) {
+    Write-ColorOutput Red "[FEHLER] $message"
+}
+
+function Write-Debug($message) {
+    if ($Verbose) {
+        Write-ColorOutput Gray "[DEBUG] $message"
+    }
+}
+
+# Hilfe anzeigen
+function Show-Help {
+    Write-Host "ERP-System PowerShell-Startskript" -ForegroundColor Cyan
+    Write-Host "Verwendung: .\start_erp_system.ps1 [Parameter]" -ForegroundColor Cyan
+    Write-Host ""
+    Write-Host "Parameter:" -ForegroundColor Yellow
+    Write-Host "  -BackendOnly              Nur Backend-Server starten" -ForegroundColor White
+    Write-Host "  -MonitoringOnly           Nur Monitoring-Komponenten starten" -ForegroundColor White
+    Write-Host "  -DashboardOnly            Nur Dashboard starten" -ForegroundColor White
+    Write-Host "  -BenchmarkOnly            Nur Benchmark ausführen" -ForegroundColor White
+    Write-Host "  -Verbose                  Ausführliche Ausgabe aktivieren" -ForegroundColor White
+    Write-Host "  -ServerPort <port>        Port für den Server (Standard: 8003)" -ForegroundColor White
+    Write-Host "  -DashboardPort <port>     Port für das Dashboard (Standard: 5000)" -ForegroundColor White
+    Write-Host "  -NoBrowser                Browser nicht automatisch öffnen" -ForegroundColor White
+    Write-Host "  -Help                     Diese Hilfe anzeigen" -ForegroundColor White
+    Write-Host ""
+    Write-Host "Beispiele:" -ForegroundColor Yellow
+    Write-Host "  .\start_erp_system.ps1                     Startet alle Komponenten" -ForegroundColor White
+    Write-Host "  .\start_erp_system.ps1 -BackendOnly        Startet nur den Backend-Server" -ForegroundColor White
+    Write-Host "  .\start_erp_system.ps1 -MonitoringOnly     Startet nur die Monitoring-Komponenten" -ForegroundColor White
+    Write-Host "  .\start_erp_system.ps1 -ServerPort 8080    Startet den Server auf Port 8080" -ForegroundColor White
+}
+
+# Umgebungsvariablen überprüfen und ggf. setzen
 function Check-Environment {
-    Write-ColorOutput "[1/7] Überprüfe Python-Installation..." "Cyan"
+    Write-Info "Überprüfe Umgebung..."
     
-    try {
-        $pythonVersion = & $PythonCmd --version
-        Write-ColorOutput "Python-Version: $pythonVersion" "Green"
-    }
-    catch {
-        Write-ColorOutput "Python konnte nicht gefunden werden. Bitte installieren Sie Python 3.12 oder höher." "Red"
-        exit 1
-    }
-    
-    # Prüfe ob venv existiert, sonst erstelle es
-    if (-not (Test-Path $VenvDir)) {
-        Write-ColorOutput "[2/7] Erstelle virtuelle Python-Umgebung..." "Cyan"
-        & $PythonCmd -m venv $VenvDir
-        if (-not $?) {
-            Write-ColorOutput "Fehler beim Erstellen der virtuellen Umgebung." "Red"
+    # Prüfe Python
+    if (-not (Test-Path -Path $PYTHON_CMD)) {
+        Write-Warning "Python-Interpreter nicht gefunden unter $PYTHON_CMD"
+        Write-Info "Versuche alternative Python-Installation..."
+        
+        if (Get-Command "python" -ErrorAction SilentlyContinue) {
+            $PYTHON_CMD = "python"
+            Write-Success "Python gefunden: $(& python --version)"
+        } else {
+            Write-Error "Python wurde nicht gefunden. Bitte installiere Python und richte eine virtuelle Umgebung ein."
             exit 1
         }
-    }
-    else {
-        Write-ColorOutput "[2/7] Virtuelle Python-Umgebung bereits vorhanden." "Green"
-    }
-    
-    # Aktiviere venv
-    Write-ColorOutput "[3/7] Aktiviere virtuelle Python-Umgebung..." "Cyan"
-    $activateScript = Join-Path $VenvDir "Scripts\Activate.ps1"
-    if (Test-Path $activateScript) {
-        & $activateScript
-        if (-not $?) {
-            Write-ColorOutput "Fehler beim Aktivieren der virtuellen Umgebung." "Red"
-            exit 1
-        }
-        Write-ColorOutput "Virtuelle Umgebung aktiviert." "Green"
-    }
-    else {
-        Write-ColorOutput "Aktivierungsskript nicht gefunden: $activateScript" "Red"
-        exit 1
+    } else {
+        Write-Success "Python gefunden: $(& $PYTHON_CMD --version)"
     }
     
-    # Installiere Abhängigkeiten
-    Write-ColorOutput "[4/7] Installiere Abhängigkeiten..." "Cyan"
-    if (Test-Path $RequirementsFile) {
-        & python -m pip install -r $RequirementsFile
-        if (-not $?) {
-            Write-ColorOutput "Fehler beim Installieren der Abhängigkeiten." "Red"
-            exit 1
+    # Prüfe NPM (nur wenn Frontend gestartet werden soll)
+    if (-not $BackendOnly -and -not $MonitoringOnly -and -not $BenchmarkOnly -and -not $DashboardOnly) {
+        if (Get-Command "npm" -ErrorAction SilentlyContinue) {
+            Write-Success "NPM gefunden: $(& npm --version)"
+        } else {
+            Write-Warning "NPM wurde nicht gefunden. Frontend wird nicht verfügbar sein."
         }
-        Write-ColorOutput "Abhängigkeiten erfolgreich installiert." "Green"
     }
-    else {
-        Write-ColorOutput "Requirements-Datei nicht gefunden: $RequirementsFile" "Red"
-        exit 1
+    
+    # Prüfe ob Abhängigkeiten installiert sind
+    Write-Info "Überprüfe Python-Abhängigkeiten..."
+    $REQ_FILE = Join-Path -Path $BACKEND_DIR -ChildPath "requirements.txt"
+    if (Test-Path -Path $REQ_FILE) {
+        # Führe pip install aus, wenn Anforderungsdatei existiert
+        & $PYTHON_CMD -m pip install -r $REQ_FILE
+    } else {
+        Write-Warning "Keine requirements.txt gefunden."
     }
+    
+    # Prüfe ob Observer-Abhängigkeiten installiert sind
+    if ($MonitoringOnly -or $DashboardOnly -or (-not $BackendOnly -and -not $BenchmarkOnly)) {
+        $OBS_REQ_FILE = Join-Path -Path $BACKEND_DIR -ChildPath "observer_requirements.txt"
+        if (Test-Path -Path $OBS_REQ_FILE) {
+            Write-Info "Installiere Observer-Abhängigkeiten..."
+            & $PYTHON_CMD -m pip install -r $OBS_REQ_FILE
+        }
+        
+        $DASHBOARD_REQ_FILE = Join-Path -Path $BACKEND_DIR -ChildPath "dashboard_requirements.txt"
+        if (Test-Path -Path $DASHBOARD_REQ_FILE) {
+            Write-Info "Installiere Dashboard-Abhängigkeiten..."
+            & $PYTHON_CMD -m pip install -r $DASHBOARD_REQ_FILE
+        }
+    }
+    
+    Write-Success "Abhängigkeiten erfolgreich installiert."
 }
 
-# Funktion zum Überprüfen des Backend-Codes
-function Check-Backend {
-    Write-ColorOutput "[5/7] Überprüfe Backend-Code..." "Cyan"
+# Überprüfe ob Server-Code vorhanden ist
+function Check-BackendCode {
+    Write-Info "Überprüfe Backend-Code..."
+    
+    # Prüfe ob minimal_server.py existiert
+    $SERVER_FILE = Join-Path -Path $BACKEND_DIR -ChildPath "minimal_server.py"
+    if (Test-Path -Path $SERVER_FILE) {
+        Write-Debug "minimal_server.py gefunden."
+    } else {
+        Write-Error "Server-Code (minimal_server.py) nicht gefunden!"
+        exit 1
+    }
     
     # Prüfe ob main.py existiert
-    $mainPyPath = Join-Path $BackendDir "main.py"
-    if (Test-Path $mainPyPath) {
-        Write-ColorOutput "main.py gefunden." "Green"
-    }
-    else {
-        Write-ColorOutput "main.py nicht gefunden: $mainPyPath" "Red"
-        exit 1
+    $MAIN_FILE = Join-Path -Path $BACKEND_DIR -ChildPath "main.py"
+    if (Test-Path -Path $MAIN_FILE) {
+        Write-Debug "main.py gefunden."
     }
     
-    # Prüfe Python-Syntax
-    & python -c "import os; path = os.path.normpath('$($mainPyPath.Replace('\', '\\'))'); import py_compile; py_compile.compile(path)"
-    if ($?) {
-        Write-ColorOutput "Syntaxprüfung erfolgreich" "Green"
-    }
-    else {
-        Write-ColorOutput "Fehler in der Python-Syntax gefunden." "Red"
-        exit 1
-    }
-    
-    # Zeige Python-Pfad zur Fehlersuche
-    if ($Development) {
-        $pythonPath = & python -c "import sys; print(sys.path)"
-        Write-ColorOutput "Python-Pfad: $pythonPath" "Gray"
-    }
-}
-
-# Funktion zum Starten des Backend-Servers
-function Start-Backend {
-    Write-ColorOutput "[6/7] Starte Backend-Server..." "Cyan"
-    
-    # Setze Umgebungsvariablen
-    $env:PYTHONPATH = $PSScriptRoot
-    
-    # Wechsle ins Backend-Verzeichnis
-    Set-Location $BackendDir
-    
-    # Starte den Backend-Server
-    Write-ColorOutput "Server wird unter http://localhost:$BackendPort verfügbar sein" "Yellow"
-    Write-ColorOutput "API-Dokumentation: http://localhost:$BackendPort/docs" "Yellow"
-    Write-ColorOutput "Health-Endpoint: http://localhost:$BackendPort/health" "Yellow"
-    Write-ColorOutput "Drücken Sie STRG+C, um den Server zu beenden." "Yellow"
-    Write-ColorOutput "=======================================" "Yellow"
-    
-    # Verwende einen modifizierten Import-Ansatz für den Server-Start
-    $pythonScript = @"
-import sys
-import os
-
-# Füge das Hauptverzeichnis zum Python-Pfad hinzu
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-
-# Importiere die notwendigen Module
-try:
-    from backend.core.path_registry import get_registry
-    registry = get_registry()
-except ImportError:
-    print("Pfadregister nicht gefunden, verwende Standardpfade.")
-
-# Importiere FastAPI-Komponenten
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-from backend.app.core.config import settings
-from backend.app.api.v1.api import api_router
-
-# Erstelle die FastAPI-Anwendung
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.VERSION,
-    openapi_url=f"{settings.API_V1_STR}/openapi.json"
-)
-
-# CORS-Middleware konfigurieren
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=settings.CORS_ORIGINS,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# API-Router einbinden
-app.include_router(api_router, prefix=settings.API_V1_STR)
-
-# Root-Endpunkt
-@app.get("/")
-async def root():
-    return {"message": "Willkommen beim AI-Driven ERP System"}
-
-# Gesundheitscheck
-@app.get("/health")
-async def health_check():
-    from datetime import datetime
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
-
-# Für direkte Ausführung
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("main:app", host="0.0.0.0", port=$BackendPort, reload=True)
-"@
-    
-    # Speichere das Skript in einer temporären Datei
-    $tempScriptPath = Join-Path $BackendDir "server_start.py"
-    $pythonScript | Out-File -FilePath $tempScriptPath -Encoding utf8
-    
+    # Syntaxprüfung
     try {
-        # Starte den Server
-        & python $tempScriptPath
+        & $PYTHON_CMD -m py_compile $SERVER_FILE
+        Write-Success "Syntaxprüfung erfolgreich"
+    } catch {
+        Write-Error "Syntaxprüfung fehlgeschlagen: $_"
+        exit 1
     }
-    finally {
-        # Lösche die temporäre Datei
-        Remove-Item -Path $tempScriptPath -ErrorAction SilentlyContinue
-    }
-}
-
-# Funktion zum Starten des Frontend-Servers (für zukünftige Implementierung)
-function Start-Frontend {
-    Write-ColorOutput "[7/7] Starte Frontend-Server..." "Cyan"
-    # Hier könnte die Frontend-Implementierung starten
-    Write-ColorOutput "Frontend-Server-Start noch nicht implementiert." "Yellow"
-}
-
-# Hauptfunktion
-function Main {
-    Write-ColorOutput "AI-Driven ERP-System wird gestartet..." "Green"
     
-    # Überprüfe und initialisiere die Umgebung
+    # Python-Pfad für Imports überprüfen
+    $PYTHONPATH = @($BACKEND_DIR, $PROJECT_ROOT, (Join-Path -Path $BACKEND_DIR -ChildPath "app"), (Join-Path -Path $PROJECT_ROOT -ChildPath "app"))
+    $env:PYTHONPATH = [string]::Join(";", $PYTHONPATH)
+    Write-Debug "Python-Pfad: $($env:PYTHONPATH -split ';')"
+}
+
+# Starte Backend-Server
+function Start-Backend {
+    Write-Info "Starte Backend-Server..."
+    
+    $STARTUP_SCRIPT = Join-Path -Path $BACKEND_DIR -ChildPath "start_erp_system.py"
+    
+    # Argumentenliste erstellen
+    $args = @()
+    
+    if ($MonitoringOnly) {
+        $args += "--monitoring-only"
+    }
+    
+    if ($DashboardOnly) {
+        $args += "--with-dashboard"
+        $args += "--no-server"
+    }
+    
+    if ($BenchmarkOnly) {
+        $args += "--benchmark-only"
+    }
+    
+    if (-not $MonitoringOnly -and -not $DashboardOnly -and -not $BenchmarkOnly) {
+        $args += "--all"
+    }
+    
+    $args += "--server-port", "$ServerPort"
+    $args += "--dashboard-port", "$DashboardPort"
+    
+    if ($NoBrowser) {
+        $args += "--no-browser"
+    }
+    
+    if ($Verbose) {
+        $args += "--verbose"
+    }
+    
+    Write-Info "Server wird unter http://localhost:$ServerPort verfügbar sein"
+    Write-Info "API-Dokumentation: http://localhost:$ServerPort/docs"
+    Write-Info "Health-Endpoint: http://localhost:$ServerPort/health"
+    
+    if ($MonitoringOnly -or $DashboardOnly -or (-not $BackendOnly -and -not $BenchmarkOnly)) {
+        Write-Info "Performance-Dashboard: http://localhost:$DashboardPort"
+    }
+    
+    Write-Info "Drücken Sie STRG+C, um den Server zu beenden."
+    Write-Info "======================================="
+    
+    # Prüfe ob das zentrale Startskript existiert
+    if (Test-Path -Path $STARTUP_SCRIPT) {
+        & $PYTHON_CMD $STARTUP_SCRIPT $args
+    } else {
+        # Fallback: Starte minimal_server.py direkt
+        $SERVER_SCRIPT = Join-Path -Path $BACKEND_DIR -ChildPath "minimal_server.py"
+        & $PYTHON_CMD $SERVER_SCRIPT --port $ServerPort
+    }
+}
+
+# Starte Frontend (falls vorhanden und gewünscht)
+function Start-Frontend {
+    if ($BackendOnly -or $MonitoringOnly -or $DashboardOnly -or $BenchmarkOnly) {
+        return
+    }
+    
+    Write-Info "Prüfe Frontend-Code..."
+    
+    if (-not (Test-Path -Path $FRONTEND_DIR)) {
+        Write-Warning "Frontend-Verzeichnis nicht gefunden."
+        return
+    }
+    
+    $PACKAGE_JSON = Join-Path -Path $FRONTEND_DIR -ChildPath "package.json"
+    if (-not (Test-Path -Path $PACKAGE_JSON)) {
+        Write-Warning "package.json im Frontend-Verzeichnis nicht gefunden."
+        return
+    }
+    
+    Write-Info "Starte Frontend-Entwicklungsserver..."
+    Set-Location $FRONTEND_DIR
+    Start-Process -FilePath $NPM_CMD -ArgumentList "start" -NoNewWindow
+    Set-Location $PROJECT_ROOT
+}
+
+# Hauptprogramm
+try {
+    # Hilfe anzeigen wenn angefordert
+    if ($Help) {
+        Show-Help
+        exit 0
+    }
+    
+    Write-Info "=== ERP-System-Starter ==="
+    
+    # Schritt 1: Umgebung prüfen
     Check-Environment
     
-    # Überprüfe den Backend-Code
-    Check-Backend
+    # Schritt 2: Backend-Code prüfen
+    Check-BackendCode
     
-    # Starte den Backend-Server
+    # Schritt 3: Backend starten
     Start-Backend
     
-    # Starte den Frontend-Server, wenn nicht nur Backend angefordert wurde
+    # Schritt 4: Frontend starten (falls gewünscht)
     if (-not $BackendOnly) {
         Start-Frontend
     }
-}
-
-# Starte das Hauptprogramm
-Main 
+    
+} catch {
+    Write-Error "Unerwarteter Fehler: $_"
+    Write-Debug $_.ScriptStackTrace
+    exit 1
+} 

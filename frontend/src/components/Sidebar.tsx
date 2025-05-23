@@ -1,39 +1,57 @@
-import React from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from 'react';
 import {
   Drawer,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-  useTheme,
   Divider,
+  Box,
+  Typography,
 } from '@mui/material';
 import {
   Dashboard as DashboardIcon,
-  ShoppingCart as OrdersIcon,
-  People as CustomersIcon,
+  ShoppingCart as ShoppingCartIcon,
+  People as PeopleIcon,
   Inventory as InventoryIcon,
-  Category as ProductsIcon,
-  Psychology as AIIcon,
+  Settings as SettingsIcon,
+  SmartToy as AIIcon,
+  Store as StoreIcon,
 } from '@mui/icons-material';
-import { useSelector } from 'react-redux';
-import { RootState } from '../store';
+import { useThemeSystem } from '../themes/ThemeProvider';
 
-const menuItems = [
-  { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-  { text: 'Produkte', icon: <ProductsIcon />, path: '/products' },
-  { text: 'Bestellungen', icon: <OrdersIcon />, path: '/orders' },
-  { text: 'Kunden', icon: <CustomersIcon />, path: '/customers' },
-  { text: 'Lager', icon: <InventoryIcon />, path: '/inventory' },
-  { text: 'KI-Analyse', icon: <AIIcon />, path: '/ai' },
-];
+// Dummy Link-Komponente, bis react-router-dom korrekt eingebunden ist
+const Link = ({ to, children, ...props }) => (
+  <div {...props} style={{ cursor: 'pointer' }}>{children}</div>
+);
 
 const Sidebar: React.FC = () => {
-  const theme = useTheme();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { sidebarOpen } = useSelector((state: RootState) => state.ui);
+  // Lokaler State statt Redux
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  
+  // Dummy location, bis react-router-dom korrekt eingebunden ist
+  const location = { pathname: '/' };
+  
+  const { currentThemeConfig } = useThemeSystem();
+  
+  // Theme-spezifische Anpassungen für die Sidebar
+  const isHighContrast = currentThemeConfig.mode === 'high-contrast';
+  const customBgColor = currentThemeConfig.mode === 'dark' ? '#2c2c2c' : '#f5f5f5';
+  const visualDensity = currentThemeConfig.parameters?.visualDensity || 'medium';
+  
+  // Visuelle Dichte für Sidebar-Elemente anpassen
+  const itemPadding = visualDensity === 'low' ? '12px 16px' : (visualDensity === 'high' ? '6px 16px' : '8px 16px');
+
+  const menuItems = [
+    { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
+    { text: 'Produkte', icon: <InventoryIcon />, path: '/products' },
+    { text: 'Kunden', icon: <PeopleIcon />, path: '/customers' },
+    { text: 'Bestellungen', icon: <ShoppingCartIcon />, path: '/orders' },
+    { text: 'Inventar', icon: <InventoryIcon />, path: '/inventory' },
+    { text: 'E-Commerce', icon: <StoreIcon />, path: '/ecommerce' },
+    { text: 'KI-Assistent', icon: <AIIcon />, path: '/ai' },
+    { text: 'Einstellungen', icon: <SettingsIcon />, path: '/settings' },
+  ];
 
   return (
     <Drawer
@@ -46,44 +64,56 @@ const Sidebar: React.FC = () => {
         '& .MuiDrawer-paper': {
           width: 240,
           boxSizing: 'border-box',
-          marginTop: '64px', // Header height
-          height: 'calc(100% - 64px)',
+          bgcolor: customBgColor,
+          border: isHighContrast ? '1px solid white' : undefined,
         },
       }}
     >
-      <Divider />
+      <Box sx={{ pt: 6, pb: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h6" component="div" sx={{ fontWeight: 'bold', color: isHighContrast ? 'white' : 'primary.main' }}>
+          AI-Driven ERP
+        </Typography>
+      </Box>
+      <Divider sx={{ borderColor: isHighContrast ? 'white' : 'divider' }} />
       <List>
         {menuItems.map((item) => (
           <ListItem
             button
+            component={Link}
+            to={item.path}
             key={item.text}
-            onClick={() => navigate(item.path)}
             selected={location.pathname === item.path}
             sx={{
+              padding: itemPadding,
               '&.Mui-selected': {
-                backgroundColor: theme.palette.primary.light,
-                '&:hover': {
-                  backgroundColor: theme.palette.primary.light,
-                },
+                bgcolor: isHighContrast ? 'rgba(255, 255, 255, 0.2)' : 'action.selected',
+                borderLeft: '4px solid',
+                borderColor: 'primary.main',
                 '& .MuiListItemIcon-root': {
-                  color: theme.palette.primary.main,
+                  color: 'primary.main',
                 },
-                '& .MuiListItemText-primary': {
-                  color: theme.palette.primary.main,
-                },
+              },
+              '&:hover': {
+                bgcolor: isHighContrast ? 'rgba(255, 255, 255, 0.1)' : 'action.hover',
               },
             }}
           >
             <ListItemIcon
               sx={{
-                color: location.pathname === item.path
-                  ? theme.palette.primary.main
-                  : 'inherit',
+                color: isHighContrast ? 'white' : 'text.secondary',
+                minWidth: visualDensity === 'low' ? 42 : (visualDensity === 'high' ? 36 : 40),
               }}
             >
               {item.icon}
             </ListItemIcon>
-            <ListItemText primary={item.text} />
+            <ListItemText 
+              primary={item.text} 
+              sx={{
+                '& .MuiTypography-root': {
+                  fontSize: visualDensity === 'low' ? '1rem' : (visualDensity === 'high' ? '0.85rem' : '0.9rem'),
+                },
+              }}
+            />
           </ListItem>
         ))}
       </List>

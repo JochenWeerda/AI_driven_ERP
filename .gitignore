@@ -9,6 +9,10 @@ backend/venv/
 *.msi
 *.bin
 
+# Ausnahmen für exe-Dateien
+!bin/*/*.exe
+!bin/*/*/*.exe
+
 # Python
 __pycache__/
 *.py[cod]
@@ -40,6 +44,12 @@ wheels/
 # Logs
 logs/
 *.log
+
+# Automatisch generierte Berichte
+optimization_report_*.md
+performance_report_*.md
+backend/optimization_report_*.md
+backend/performance_report_*.md
 
 # Umgebungsvariablen
 .env

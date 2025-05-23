@@ -7,14 +7,19 @@ import sys
 import os
 import json
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from uuid import uuid4
+import psutil
+import time
 
 # Füge Verzeichnisse zum Python-Pfad hinzu
 backend_dir = Path(__file__).parent.absolute()
 root_dir = backend_dir.parent
 sys.path.insert(0, str(root_dir))
 sys.path.insert(0, str(backend_dir))
+
+# Import des Cache-Managers
+from cache_manager import cache
 
 # Starlette importieren statt FastAPI
 from starlette.applications import Starlette
@@ -606,12 +611,48 @@ async def root(request):
         "dokumentation": "/docs"
     })
 
-# Gesundheitscheck
+# Gesundheitscheck mit Performance-Optimierung
+@cache.cached(ttl=10)  # 10 Sekunden cachen
 async def health_check(request):
+    # CPU-Nutzung des aktuellen Prozesses ermitteln - reduziertes Intervall
+    current_process = psutil.Process(os.getpid())
+    
+    # Keine CPU-Messung bei jeder Anfrage, da teuer
+    # Stattdessen alle 10 Sekunden per Cache-TTL
+    cpu_usage = current_process.cpu_percent(interval=0.05)
+    
+    # Speichernutzung ermitteln
+    memory_info = current_process.memory_info()
+    memory_usage_percent = current_process.memory_percent()
+    
+    # Laufzeit berechnen
+    start_time = current_process.create_time()
+    uptime_seconds = time.time() - start_time
+    
+    # Aktuelle Zeit im ISO-Format mit UTC
+    current_time = datetime.now(UTC).isoformat()
+    
+    # API-Anfragen zählen (einfache statische Variable für Demonstration)
+    if not hasattr(health_check, "request_count"):
+        health_check.request_count = 0
+    health_check.request_count += 1
+    
+    # Durchschnittliche Antwortzeit (Mock-Wert für Demonstration)
+    avg_response_time = 42.5  # ms
+    
     return JSONResponse({
-        "status": "healthy", 
-        "timestamp": datetime.utcnow().isoformat(),
-        "api_version": "1.0",
+        "status": "online",
+        "version": "1.0.0",
+        "timestamp": current_time,
+        "uptime_seconds": int(uptime_seconds),
+        "metrics": {
+            "cpu_usage_percent": round(cpu_usage, 2),
+            "memory_usage_percent": round(memory_usage_percent, 2),
+            "request_count": health_check.request_count,
+            "average_response_time_ms": avg_response_time,
+            "database_connections": 3,
+            "queue_size": 0
+        },
         "services": {
             "database": "connected",
             "auth": "operational",
@@ -620,39 +661,45 @@ async def health_check(request):
     })
 
 # --- Adresse-Endpunkte (im L3-Format) ---
+@cache.cached(ttl=60)
 async def get_adressen(request):
     filter_query = request.query_params.get("$filter")
     if filter_query:
         # Einfache Filterung für Demo-Zwecke
         if "Nummer eq " in filter_query:
             nummer = int(filter_query.split("Nummer eq ")[1])
-            filtered = [a for a in adressen if a["Nummer"] == nummer]
-            return JSONResponse({"Data": filtered})
+            # Direkter Lookup statt Liste filtern
+            addr = lookup_maps['adressen_by_nummer'].get(nummer)
+            if addr:
+                return JSONResponse({"Data": [addr]})
+            return JSONResponse({"Data": []})
     
     return JSONResponse({"Data": adressen})
 
 # --- Artikel-Endpunkte (im L3-Format) ---
+@cache.cached(ttl=120)
 async def get_artikel_l3_format(request):
     filter_query = request.query_params.get("$filter")
     if filter_query:
         # Einfache Filterung für Demo-Zwecke
         if "Nummer eq '" in filter_query:
             nummer = filter_query.split("Nummer eq '")[1].split("'")[0]
-            filtered = [
-                {
-                    "Nummer": a["artikelnummer"],
-                    "Bezeichnung": a["bezeichnung"],
-                    "Beschreibung": f"Kategorie: {a['kategorie']}",
-                    "VerkPreis": a["preis"],
-                    "EinkPreis": a["preis"] * 0.6,  # Demo-Zwecke
-                    "Einheit": a["einheit"],
-                    "Bestand": a["lagerbestand"]
-                } 
-                for a in artikel if a["artikelnummer"] == nummer
-            ]
-            return JSONResponse({"Data": filtered})
+            # Verwende Lookup-Map statt Liste filtern
+            artikel_item = lookup_maps['artikel_by_nummer'].get(nummer)
+            if artikel_item:
+                l3_artikel = {
+                    "Nummer": artikel_item["artikelnummer"],
+                    "Bezeichnung": artikel_item["bezeichnung"],
+                    "Beschreibung": f"Kategorie: {artikel_item['kategorie']}",
+                    "VerkPreis": artikel_item["preis"],
+                    "EinkPreis": artikel_item["preis"] * 0.6,  # Demo-Zwecke
+                    "Einheit": artikel_item["einheit"],
+                    "Bestand": artikel_item["lagerbestand"]
+                }
+                return JSONResponse({"Data": [l3_artikel]})
+            return JSONResponse({"Data": []})
     
-    # Konvertiere in L3-Format
+    # Konvertiere in L3-Format - einmal berechnen und cachen
     l3_artikel = [
         {
             "Nummer": a["artikelnummer"],
@@ -669,28 +716,33 @@ async def get_artikel_l3_format(request):
     return JSONResponse({"Data": l3_artikel})
 
 # --- Inventur-Endpunkte ---
+@cache.cached(ttl=300)
 async def get_inventuren(request):
     return JSONResponse({"inventuren": inventuren})
 
+@cache.cached(ttl=300)
 async def get_inventur(request):
     inventur_id = int(request.path_params["inventur_id"])
-    for inv in inventuren:
-        if inv["id"] == inventur_id:
-            return JSONResponse(inv)
+    inv = lookup_maps['inventuren_by_id'].get(inventur_id)
+    if inv:
+        return JSONResponse(inv)
     return JSONResponse({"error": "Inventur nicht gefunden"}, status_code=404)
 
 # --- Artikel-Endpunkte (Standard-Format) ---
+@cache.cached(ttl=120)
 async def get_artikel_standard(request):
     return JSONResponse({"artikel": artikel})
 
+@cache.cached(ttl=120)
 async def get_artikel_by_id(request):
     artikel_id = int(request.path_params["artikel_id"])
-    for art in artikel:
-        if art["id"] == artikel_id:
-            return JSONResponse(art)
+    art = lookup_maps['artikel_by_id'].get(artikel_id)
+    if art:
+        return JSONResponse(art)
     return JSONResponse({"error": "Artikel nicht gefunden"}, status_code=404)
 
 # --- Lager-Endpunkte ---
+@cache.cached(ttl=300)
 async def get_lager(request):
     filter_query = request.query_params.get("$filter")
     if filter_query:
@@ -699,143 +751,190 @@ async def get_lager(request):
     
     return JSONResponse({"lager": lager})
 
+@cache.cached(ttl=300)
 async def get_lager_by_id(request):
     lager_id = int(request.path_params["lager_id"])
-    for l in lager:
-        if l["id"] == lager_id:
-            return JSONResponse(l)
+    l = lookup_maps['lager_by_id'].get(lager_id)
+    if l:
+        return JSONResponse(l)
     return JSONResponse({"error": "Lager nicht gefunden"}, status_code=404)
 
 # --- Kunden-Endpunkte ---
+@cache.cached(ttl=180)
 async def get_kunden(request):
     filter_query = request.query_params.get("$filter")
     if filter_query:
         # Implementiere L3-ähnliche Filterung hier
         if "Nummer eq " in filter_query:
             nummer = int(filter_query.split("Nummer eq ")[1])
-            filtered = [k for k in kunden if k["id"] == nummer]
-            return JSONResponse({"Data": filtered})
+            # Verwende Lookup statt Liste filtern
+            kunde = lookup_maps['kunden_by_id'].get(nummer)
+            if kunde:
+                return JSONResponse({"Data": [kunde]})
+            return JSONResponse({"Data": []})
     
     return JSONResponse({"kunden": kunden})
 
+@cache.cached(ttl=180)
 async def get_kunde_by_id(request):
     kunde_id = int(request.path_params["kunde_id"])
-    for k in kunden:
-        if k["id"] == kunde_id:
-            return JSONResponse(k)
+    k = lookup_maps['kunden_by_id'].get(kunde_id)
+    if k:
+        return JSONResponse(k)
     return JSONResponse({"error": "Kunde nicht gefunden"}, status_code=404)
 
 # --- Aufträge-Endpunkte ---
+@cache.cached(ttl=120)
 async def get_auftraege(request):
     filter_query = request.query_params.get("$filter")
     if filter_query:
         # Implementiere L3-ähnliche Filterung hier
         if "Nummer eq '" in filter_query:
             nummer = filter_query.split("Nummer eq '")[1].split("'")[0]
-            filtered = [a for a in auftraege if a["auftragsnummer"] == nummer]
-            return JSONResponse({"Data": filtered})
+            # Verwende Lookup statt Liste filtern
+            auftrag = lookup_maps['auftraege_by_nummer'].get(nummer)
+            if auftrag:
+                return JSONResponse({"Data": [auftrag]})
+            return JSONResponse({"Data": []})
     
     return JSONResponse({"auftraege": auftraege})
 
+@cache.cached(ttl=120)
 async def get_auftrag_by_id(request):
     auftrag_id = int(request.path_params["auftrag_id"])
-    for a in auftraege:
-        if a["id"] == auftrag_id:
-            return JSONResponse(a)
+    a = lookup_maps['auftraege_by_id'].get(auftrag_id)
+    if a:
+        return JSONResponse(a)
     return JSONResponse({"error": "Auftrag nicht gefunden"}, status_code=404)
 
 # --- Bestellungen-Endpunkte ---
+@cache.cached(ttl=120)
 async def get_bestellungen(request):
     return JSONResponse({"bestellungen": bestellungen})
 
+@cache.cached(ttl=120)
 async def get_bestellung_by_id(request):
     bestellung_id = int(request.path_params["bestellung_id"])
-    for b in bestellungen:
-        if b["id"] == bestellung_id:
-            return JSONResponse(b)
+    b = lookup_maps['bestellungen_by_id'].get(bestellung_id)
+    if b:
+        return JSONResponse(b)
     return JSONResponse({"error": "Bestellung nicht gefunden"}, status_code=404)
 
 # --- Lieferanten-Endpunkte ---
+@cache.cached(ttl=300)
 async def get_lieferanten(request):
     return JSONResponse({"lieferanten": lieferanten})
 
+@cache.cached(ttl=300)
 async def get_lieferant_by_id(request):
     lieferant_id = int(request.path_params["lieferant_id"])
-    for l in lieferanten:
-        if l["id"] == lieferant_id:
-            return JSONResponse(l)
+    l = lookup_maps['lieferanten_by_id'].get(lieferant_id)
+    if l:
+        return JSONResponse(l)
     return JSONResponse({"error": "Lieferant nicht gefunden"}, status_code=404)
 
 # --- Rechnungen-Endpunkte ---
+@cache.cached(ttl=180)
 async def get_rechnungen(request):
     return JSONResponse({"rechnungen": rechnungen})
 
+@cache.cached(ttl=180)
 async def get_rechnung_by_id(request):
     rechnung_id = int(request.path_params["rechnung_id"])
-    for r in rechnungen:
-        if r["id"] == rechnung_id:
-            return JSONResponse(r)
+    r = lookup_maps['rechnungen_by_id'].get(rechnung_id)
+    if r:
+        return JSONResponse(r)
     return JSONResponse({"error": "Rechnung nicht gefunden"}, status_code=404)
 
 # --- Eingangslieferscheine-Endpunkte ---
+@cache.cached(ttl=180)
 async def get_eingangslieferscheine(request):
     return JSONResponse({"eingangslieferscheine": eingangslieferscheine})
 
+@cache.cached(ttl=180)
 async def get_eingangslieferschein_by_id(request):
     els_id = int(request.path_params["els_id"])
-    for els in eingangslieferscheine:
-        if els["id"] == els_id:
-            return JSONResponse(els)
+    els = lookup_maps['els_by_id'].get(els_id)
+    if els:
+        return JSONResponse(els)
     return JSONResponse({"error": "Eingangslieferschein nicht gefunden"}, status_code=404)
 
 # --- Verkaufslieferscheine-Endpunkte ---
+@cache.cached(ttl=180)
 async def get_verkaufslieferscheine(request):
     return JSONResponse({"verkaufslieferscheine": verkaufslieferscheine})
 
+@cache.cached(ttl=180)
 async def get_verkaufslieferschein_by_id(request):
     vls_id = int(request.path_params["vls_id"])
-    for vls in verkaufslieferscheine:
-        if vls["id"] == vls_id:
-            return JSONResponse(vls)
+    vls = lookup_maps['vls_by_id'].get(vls_id)
+    if vls:
+        return JSONResponse(vls)
     return JSONResponse({"error": "Verkaufslieferschein nicht gefunden"}, status_code=404)
 
-# --- Projekte-Endpunkte ---
+# --- Projekt-Endpunkte ---
+@cache.cached(ttl=240)
 async def get_projekte(request):
     return JSONResponse({"projekte": projekte})
 
+@cache.cached(ttl=240)
 async def get_projekt_by_id(request):
     projekt_id = int(request.path_params["projekt_id"])
-    for p in projekte:
-        if p["id"] == projekt_id:
-            return JSONResponse(p)
+    p = lookup_maps['projekte_by_id'].get(projekt_id)
+    if p:
+        return JSONResponse(p)
     return JSONResponse({"error": "Projekt nicht gefunden"}, status_code=404)
 
-# --- Zeiterfassung-Endpunkte ---
+# --- Zeiterfassungs-Endpunkte ---
+@cache.cached(ttl=120)
 async def get_zeiterfassungen(request):
     projekt_id = request.query_params.get("projekt_id")
     mitarbeiter_id = request.query_params.get("mitarbeiter_id")
     
+    # Optimierung: Erstelle Indizes nur wenn nötig (Lazy-Loading)
+    if not hasattr(get_zeiterfassungen, "indices_created"):
+        get_zeiterfassungen.indices_created = True
+        get_zeiterfassungen.by_projekt = {}
+        get_zeiterfassungen.by_mitarbeiter = {}
+        
+        for z in zeiterfassungen:
+            pid = z["projekt_id"]
+            mid = z["mitarbeiter_id"]
+            
+            if pid not in get_zeiterfassungen.by_projekt:
+                get_zeiterfassungen.by_projekt[pid] = []
+            get_zeiterfassungen.by_projekt[pid].append(z)
+            
+            if mid not in get_zeiterfassungen.by_mitarbeiter:
+                get_zeiterfassungen.by_mitarbeiter[mid] = []
+            get_zeiterfassungen.by_mitarbeiter[mid].append(z)
+    
     if projekt_id:
-        projekt_zeiten = [z for z in zeiterfassungen if z["projekt_id"] == int(projekt_id)]
+        pid = int(projekt_id)
+        projekt_zeiten = get_zeiterfassungen.by_projekt.get(pid, [])
         return JSONResponse({"zeiterfassungen": projekt_zeiten})
     elif mitarbeiter_id:
-        mitarbeiter_zeiten = [z for z in zeiterfassungen if z["mitarbeiter_id"] == int(mitarbeiter_id)]
+        mid = int(mitarbeiter_id)
+        mitarbeiter_zeiten = get_zeiterfassungen.by_mitarbeiter.get(mid, [])
         return JSONResponse({"zeiterfassungen": mitarbeiter_zeiten})
     else:
         return JSONResponse({"zeiterfassungen": zeiterfassungen})
 
 # --- Dokumente-Endpunkte ---
+@cache.cached(ttl=300)
 async def get_dokumente(request):
     return JSONResponse({"dokumente": dokumente})
 
+@cache.cached(ttl=300)
 async def get_dokument_by_id(request):
     dokument_id = int(request.path_params["dokument_id"])
-    for d in dokumente:
-        if d["id"] == dokument_id:
-            return JSONResponse(d)
+    d = lookup_maps['dokumente_by_id'].get(dokument_id)
+    if d:
+        return JSONResponse(d)
     return JSONResponse({"error": "Dokument nicht gefunden"}, status_code=404)
 
 # Dashboard-Daten
+@cache.cached(ttl=60)  # Dashboard-Daten für 60 Sekunden cachen
 async def get_dashboard_data(request):
     today = datetime.now().date()
     
@@ -953,51 +1052,97 @@ async def openapi_spec(request):
         }
     })
 
-# E-Commerce-Routen
+# E-Commerce-Routen mit Cache
+@cache.cached(ttl=240)  # 4 Minuten Cache
 async def get_produkte(request):
     return JSONResponse({"produkte": produkte})
 
+@cache.cached(ttl=240)
 async def get_produkt_by_id(request):
     produkt_id = int(request.path_params["id"])
-    for p in produkte:
-        if p["id"] == produkt_id:
-            return JSONResponse(p)
+    p = lookup_maps['produkte_by_id'].get(produkt_id)
+    if p:
+        return JSONResponse(p)
     return JSONResponse({"error": "Produkt nicht gefunden"}, status_code=404)
 
+@cache.cached(ttl=300)  # 5 Minuten Cache für relativ statische Daten
 async def get_produkt_kategorien(request):
     return JSONResponse({"kategorien": produkt_kategorien})
 
+@cache.cached(ttl=300)
 async def get_produkt_kategorie_by_id(request):
     kategorie_id = int(request.path_params["id"])
-    for k in produkt_kategorien:
-        if k["id"] == kategorie_id:
-            return JSONResponse(k)
+    k = lookup_maps['produkt_kategorien_by_id'].get(kategorie_id)
+    if k:
+        return JSONResponse(k)
     return JSONResponse({"error": "Kategorie nicht gefunden"}, status_code=404)
 
+# Nicht Cachen - dynamische Daten
 async def get_warenkorb(request):
     # In einer echten Anwendung würde hier die Session-ID überprüft werden
     return JSONResponse(warenkörbe[0])
 
+@cache.cached(ttl=120)
 async def get_bestellungen_ecommerce(request):
     return JSONResponse({"bestellungen": bestellungen_ecommerce})
 
+@cache.cached(ttl=120)
 async def get_bestellung_ecommerce_by_id(request):
     bestellung_id = int(request.path_params["id"])
-    for b in bestellungen_ecommerce:
-        if b["id"] == bestellung_id:
-            return JSONResponse(b)
+    b = lookup_maps['bestellungen_ecommerce_by_id'].get(bestellung_id)
+    if b:
+        return JSONResponse(b)
     return JSONResponse({"error": "Bestellung nicht gefunden"}, status_code=404)
 
+@cache.cached(ttl=180)
 async def get_adressen_ecommerce(request):
     return JSONResponse({"adressen": adressen_ecommerce})
 
+@cache.cached(ttl=300)
 async def get_rabatte(request):
     return JSONResponse({"rabatte": rabatte})
 
+@cache.cached(ttl=180)
 async def get_bewertungen(request):
     return JSONResponse({"bewertungen": bewertungen})
 
-# Routen definieren
+# Lookup-Maps für schnellere ID-basierte Abfragen
+def create_lookup_maps():
+    # Für alle Datenstrukturen Lookup-Maps erstellen
+    lookup_maps = {
+        'artikel_by_id': {a['id']: a for a in artikel},
+        'artikel_by_nummer': {a['artikelnummer']: a for a in artikel},
+        'inventuren_by_id': {i['id']: i for i in inventuren},
+        'lager_by_id': {l['id']: l for l in lager},
+        'kunden_by_id': {k['id']: k for k in kunden},
+        'kunden_by_nummer': {k.get('kundennummer', str(k['id'])): k for k in kunden},
+        'auftraege_by_id': {a['id']: a for a in auftraege},
+        'auftraege_by_nummer': {a['auftragsnummer']: a for a in auftraege},
+        'bestellungen_by_id': {b['id']: b for b in bestellungen},
+        'lieferanten_by_id': {l['id']: l for l in lieferanten},
+        'rechnungen_by_id': {r['id']: r for r in rechnungen},
+        'els_by_id': {e['id']: e for e in eingangslieferscheine},
+        'vls_by_id': {v['id']: v for v in verkaufslieferscheine},
+        'projekte_by_id': {p['id']: p for p in projekte},
+        'dokumente_by_id': {d['id']: d for d in dokumente},
+        'produkte_by_id': {p['id']: p for p in produkte},
+        'produkt_kategorien_by_id': {k['id']: k for k in produkt_kategorien},
+        'bestellungen_ecommerce_by_id': {b['id']: b for b in bestellungen_ecommerce},
+        'adressen_by_nummer': {a['Nummer']: a for a in adressen}
+    }
+    return lookup_maps
+
+# Lookup-Maps erstellen
+lookup_maps = create_lookup_maps()
+
+# Optimierte ID-basierte Abfragefunktion
+def get_by_id(collection, id_field, id_value):
+    map_name = f"{collection}_by_{id_field}"
+    if map_name in lookup_maps:
+        return lookup_maps[map_name].get(id_value)
+    return None
+
+# Routen definieren mit optimierten API-Endpunkten
 routes = [
     # Grundlegende Endpunkte
     Route("/", endpoint=root),
@@ -1074,33 +1219,67 @@ routes = [
     Route("/api/v1/dokumente/{dokument_id:int}", endpoint=get_dokument_by_id),
     
     # Neue E-Commerce-Routen
-    Route("/api/v1/produkte", get_produkte),
-    Route("/api/v1/produkte/{id:int}", get_produkt_by_id),
-    Route("/api/v1/kategorien", get_produkt_kategorien),
-    Route("/api/v1/kategorien/{id:int}", get_produkt_kategorie_by_id),
-    Route("/api/v1/warenkorb", get_warenkorb),
-    Route("/api/v1/ecommerce/bestellungen", get_bestellungen_ecommerce),
-    Route("/api/v1/ecommerce/bestellungen/{id:int}", get_bestellung_ecommerce_by_id),
-    Route("/api/v1/ecommerce/adressen", get_adressen_ecommerce),
-    Route("/api/v1/rabatte", get_rabatte),
-    Route("/api/v1/bewertungen", get_bewertungen),
+    Route("/api/v1/produkte", endpoint=get_produkte),
+    Route("/api/v1/produkte/{id:int}", endpoint=get_produkt_by_id),
+    Route("/api/v1/kategorien", endpoint=get_produkt_kategorien),
+    Route("/api/v1/kategorien/{id:int}", endpoint=get_produkt_kategorie_by_id),
+    Route("/api/v1/warenkorb", endpoint=get_warenkorb),
+    Route("/api/v1/ecommerce/bestellungen", endpoint=get_bestellungen_ecommerce),
+    Route("/api/v1/ecommerce/bestellungen/{id:int}", endpoint=get_bestellung_ecommerce_by_id),
+    Route("/api/v1/ecommerce/adressen", endpoint=get_adressen_ecommerce),
+    Route("/api/v1/rabatte", endpoint=get_rabatte),
+    Route("/api/v1/bewertungen", endpoint=get_bewertungen),
 ]
 
-# Middleware definieren
+# Middleware konfigurieren mit aktivierten HTTP-Optimierungen
 middleware = [
-    Middleware(CORSMiddleware, allow_origins=["*"], allow_methods=["*"], allow_headers=["*"])
+    Middleware(
+        CORSMiddleware,
+        allow_origins=["*"],  # In Produktionsumgebung einschränken
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 ]
 
-# Starlette-App erstellen
+# App mit optimierter Konfiguration erstellen
 app = Starlette(
-    debug=True,
+    debug=False,  # Debug-Modus ausschalten für bessere Performance
     routes=routes,
-    middleware=middleware
+    middleware=middleware,
+    on_startup=[create_lookup_maps],  # Lookup-Maps beim Start erstellen
 )
 
-# Server starten
+# Statische Files für Dokumentation
+app.mount("/docs/static", StaticFiles(directory=str(Path(__file__).parent / "static")), name="static")
+
+# Nur wenn direkt ausgeführt
 if __name__ == "__main__":
-    print("Minimaler Server wird gestartet...")
-    print("Server läuft auf http://localhost:8002")
-    print("API-Dokumentation verfügbar unter: http://localhost:8002/docs")
-    uvicorn.run(app, host="0.0.0.0", port=8002) 
+    import argparse
+    
+    # Kommandozeilenargumente parsen
+    parser = argparse.ArgumentParser(description="Minimaler Server für AI-Driven ERP System")
+    parser.add_argument("--port", type=int, default=8003, help="Port für den Server (Standard: 8003)")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host-Adresse (Standard: 0.0.0.0)")
+    parser.add_argument("--workers", type=int, default=4, help="Anzahl der Worker-Prozesse (Standard: 4)")
+    args = parser.parse_args()
+    
+    print(f"Minimaler Server wird gestartet...")
+    print(f"Server läuft auf http://localhost:{args.port}")
+    print(f"API-Dokumentation verfügbar unter: http://localhost:{args.port}/docs")
+    
+    # Uvicorn mit optimierten Einstellungen starten
+    uvicorn.run(
+        "minimal_server:app",
+        host=args.host,
+        port=args.port,
+        workers=args.workers,
+        loop="uvloop",  # Schnellere Event-Loop
+        http="httptools",  # Schnellerer HTTP-Parser
+        log_level="warning",  # Reduziere Log-Ausgabe
+        access_log=False,  # Access-Logs für bessere Performance deaktivieren
+        limit_concurrency=1000,  # Max. gleichzeitige Verbindungen
+        limit_max_requests=10000,  # Max. Anfragen pro Worker
+        timeout_keep_alive=5,  # Timeout für Keep-Alive reduzieren
+        reload=False,  # Auto-Reload deaktivieren
+    ) 
