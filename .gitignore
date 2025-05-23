@@ -8,6 +8,7 @@ backend/venv/
 *.exe
 *.msi
 *.bin
+postgresql-installer.exe
 
 # Ausnahmen für exe-Dateien
 !bin/*/*.exe
