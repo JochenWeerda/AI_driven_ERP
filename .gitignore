@@ -41,6 +41,10 @@ wheels/
 *.swp
 *.swo
 
+# Cursor IDE
+cursor-memory-bank/
+.cursor/
+
 # Logs
 logs/
 *.log
