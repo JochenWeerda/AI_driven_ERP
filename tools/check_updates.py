@@ -243,7 +243,7 @@ def generate_update_report(dependencies, deps_to_update, compatibility_issues):
     system_info = platform.platform()
     hostname = socket.gethostname()
     
-    with open(REPORT_FILE, 'w') as f:
+    with open(REPORT_FILE, 'w', encoding='utf-8') as f:
         f.write(f"# Update-Bericht\n\n")
         f.write(f"Erstellt am: {now}\n")
         f.write(f"System: {system_info}\n")
@@ -256,7 +256,7 @@ def generate_update_report(dependencies, deps_to_update, compatibility_issues):
         for name, info in dependencies.items():
             current = info.get("current_version", "Nicht installiert")
             latest = info.get("latest_version", "Unbekannt")
-            update = "✓" if name in deps_to_update else "✗"
+            update = "Ja" if name in deps_to_update else "Nein"
             f.write(f"| {name} | {current} | {latest} | {update} |\n")
         
         if deps_to_update:
