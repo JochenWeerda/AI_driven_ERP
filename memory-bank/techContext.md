@@ -158,3 +158,74 @@ Die implementierten Optimierungen haben zu signifikanten Performance-Verbesserun
 - 4+ GB RAM für parallele Komponenten
 - 100+ MB freier Festplattenspeicher für Metriken und Berichte
 - Unterstützte Betriebssysteme: Windows 10/11, Linux, macOS 
+
+## GitHub Push Best Practices
+
+Beim Pushen von Änderungen zu GitHub sind folgende Best Practices zu beachten:
+
+1. **Große Dateien verwalten:**
+   - Dateien >100 MB sollten mit Git LFS (Large File Storage) verwaltet werden
+   - Die .gitattributes-Datei sollte entsprechende LFS-Einträge haben (z.B. `*.exe filter=lfs diff=lfs merge=lfs -text`)
+   - Alternativ große Dateien zu .gitignore hinzufügen
+
+2. **Repository-Bereinigung:**
+   - Nach Problemen mit großen Dateien: `git filter-branch` oder BFG-Tool verwenden
+   - Garbage Collection durchführen: `git gc --prune=now`
+   - Reflog bereinigen: `git reflog expire --expire=now --all`
+
+3. **Branch-Strategie:**
+   - Feature-Branches für neue Funktionen erstellen
+   - Bei Konflikten mit dem Hauptbranch einen neuen Branch erstellen und Force-Push verwenden
+   - Pull Requests für Reviews vor dem Mergen in den Hauptbranch nutzen
+
+4. **Windows-spezifische Anmerkungen:**
+   - In PowerShell Semikolon `;` statt `&&` als Befehlstrenner verwenden
+   - Bei Kodierungsproblemen UTF-8 ohne BOM für alle Dateien verwenden
+
+## Tool-Verwaltung und Updates
+
+Das ERP-System verwendet verschiedene Tools und Abhängigkeiten, die regelmäßig überprüft und aktualisiert werden müssen.
+
+### Installierte Tools und Abhängigkeiten
+
+| Tool/Bibliothek | Version | Zweck | Abhängigkeiten |
+|-----------------|---------|-------|----------------|
+| Python | 3.13.0 | Backend-Laufzeitumgebung | - |
+| FastAPI | 0.104.1 | API-Framework | Starlette, Pydantic |
+| Uvicorn | 0.24.0 | ASGI-Server | - |
+| SQLAlchemy | 2.0.23 | ORM für Datenbankzugriff | - |
+| Node.js | 18.x | Frontend-Entwicklung | - |
+| PostgreSQL | 15.x | Datenbank | - |
+| Git LFS | 3.x | Large File Storage | Git |
+
+### Update-Prozess
+
+1. **Überprüfung auf Updates:**
+   - Alle drei Monate systematische Überprüfung aller Komponenten
+   - Verwendung des Scripts `check_updates.py` im `tools`-Verzeichnis
+
+2. **Kompatibilitätsanalyse:**
+   - Tests zur Validierung der Kompatibilität neuer Versionen
+   - Prüfung auf Breaking Changes in APIs oder Schnittstellen
+   - Überprüfung von Typen und Syntaxänderungen
+
+3. **Automatisiertes Update:**
+   - Updates werden nachts durchgeführt (wenn 1 Stunde keine Benutzeraktivität)
+   - Lokales Backup und Datenbanksicherung vor jedem Update
+   - Benachrichtigung der Benutzer zwei Tage im Voraus über das Frontend
+   - Präferenz für Updates am Freitagabend
+
+4. **Fallback-Strategie:**
+   - Aufbewahrung der vorherigen funktionierenden Umgebung
+   - Automatisiertes Rollback bei fehlgeschlagenen Healthchecks
+   - Dokumentation von Änderungen und potentiellen Problemen
+
+### Aktualisierungscheckliste
+
+- [ ] Kompatibilitätsmatrix erstellen
+- [ ] Testumgebung aktualisieren und testen
+- [ ] Benutzer benachrichtigen
+- [ ] Backup erstellen
+- [ ] Update durchführen
+- [ ] Healthchecks ausführen
+- [ ] Systemüberwachung für 24 Stunden 
